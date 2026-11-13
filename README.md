@@ -23,6 +23,12 @@ This repository is the documentation, architecture, and coordination home for th
 | `docs/investors/investor-ecosystem-summary.txt` | Preserved investor ecosystem source material |
 | `docs/technical/sovereign-circuit-executive-summary.md` | Sovereign Circuit technical assessment and its explicit limitations |
 | `docs/time/time-model-recalibration-note.txt` | Record of the existing Time Engine specification commit |
+| `docs/architecture/ADR-002-licensing.md` | Apache-2.0 direction, provenance rules, and AGPL firewall |
+| `docs/migration/phase-0-to-phase-6-checklist.md` | Executable phased migration and release checklist |
+| `docs/integration/replit-source-mapping.md` | Replit workspace, source, and deployment verification register |
+| `docs/contracts/identity-and-interoperability-contracts.md` | Draft identity, consent, event, idempotency, and provenance contracts |
+| `package.json`, `pnpm-workspace.yaml` | pnpm workspace starter for future shared packages |
+| `LICENSE`, `NOTICE` | Licensing terms and third-party/provenance exclusions |
 
 ## Portfolio boundaries
 
@@ -56,4 +62,4 @@ Do not use investor targets, illustrative savings, proposed compliance controls,
 4. Integrate through small adapters and non-destructive pull requests.
 5. Verify tests, staging behavior, security boundaries, and rollback before production release.
 
-See [the integration roadmap](docs/integration/roadmap.md) and [architecture decisions](docs/architecture/decisions.md).
+See [the integration roadmap](docs/integration/roadmap.md), [architecture decisions](docs/architecture/decisions.md), [ADR-002 licensing](docs/architecture/ADR-002-licensing.md), and the [Phase 0–6 checklist](docs/migration/phase-0-to-phase-6-checklist.md). The pnpm workspace is scaffolding only: no application source has been moved into this repository.
