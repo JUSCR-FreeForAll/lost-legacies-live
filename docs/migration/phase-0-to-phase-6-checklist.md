@@ -25,11 +25,12 @@ Status key: `[ ]` not started · `[x]` evidenced complete · `[~]` in progress �
 
 ### Archon Fracture Back source review
 - [ ] Confirm `JUSCR-FreeForAll/archonfractureback` current default branch and all active branches.
-- [ ] Fetch and compare `workit` with `codex/six-segment-interoperability`; record merge base, ahead/behind counts, and changed files.
+- [x] Compare `workit` with `codex/six-segment-interoperability`: GitHub comparison reports 41 commits ahead, 0 behind, and 39 changed files as of 2026-11-13. This is comparison metadata, not a code review or test result.
 - [ ] Review the reported 41+ interoperability commits individually or by coherent commit groups; verify the actual count rather than assuming it.
 - [ ] Inspect auth, identity, tenant/project namespaces, data model, migrations, API routes, event formats, and secret handling.
 - [ ] Confirm the existing Fastify/PostgreSQL track against source code. Do not conflate it with the proposed Supabase/Solana/Redis stack.
-- [ ] Verify the current license and provenance before copying or adapting any source.
+- [x] Inspect the JUSCR-FreForAll root LICENSE: it is placeholder text referring to AGPL-3.0, not the full license. Treat exact terms as unresolved and do not copy code until corrected and reviewed.
+- [ ] Verify the current license and provenance of Archon Fracture Back and each file before copying or adapting any source.
 - [ ] Open a source-repository PR for any required branch reconciliation; do not merge it from this portfolio repository.
 
 ### Time Engine / Spine safety and database
