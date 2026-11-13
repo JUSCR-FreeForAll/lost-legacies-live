@@ -16,5 +16,5 @@
     "clean": "pnpm -r --if-present run clean"
   },
   "keywords": ["juscr", "lost-legacies-live", "time-engine", "five-realms"],
-  "license": "SEE LICENSE IN docs/rights/"
+  "license": "Apache-2.0"
 }
