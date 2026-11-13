@@ -27,7 +27,7 @@ This repository is the documentation, architecture, and coordination home for th
 | `docs/migration/phase-0-to-phase-6-checklist.md` | Executable phased migration and release checklist |
 | `docs/integration/replit-source-mapping.md` | Replit workspace, source, and deployment verification register |
 | `docs/contracts/identity-and-interoperability-contracts.md` | Draft identity, consent, event, idempotency, and provenance contracts |
-| `package.json`, `pnpm-workspace.yaml` | pnpm workspace starter for future shared packages |
+| `package.json`, `pnpm-workspace.yaml` | pnpm workspace root and package discovery |\n| `apps/desktop/` | React + Vite browser-based portfolio headquarters scaffold |\n| `packages/core/` | Dependency-free shared domain primitives and Node tests |
 | `LICENSE`, `NOTICE` | Licensing terms and third-party/provenance exclusions |
 
 ## Portfolio boundaries
@@ -62,7 +62,7 @@ Do not use investor targets, illustrative savings, proposed compliance controls,
 4. Integrate through small adapters and non-destructive pull requests.
 5. Verify tests, staging behavior, security boundaries, and rollback before production release.
 
-See [the integration roadmap](docs/integration/roadmap.md), [architecture decisions](docs/architecture/decisions.md), [ADR-002 licensing](docs/architecture/ADR-002-licensing.md), and the [Phase 0–6 checklist](docs/migration/phase-0-to-phase-6-checklist.md). The pnpm workspace is scaffolding only: no application source has been moved into this repository.
+See [the integration roadmap](docs/integration/roadmap.md), [architecture decisions](docs/architecture/decisions.md), [ADR-002 licensing](docs/architecture/ADR-002-licensing.md), and the [Phase 0–6 checklist](docs/migration/phase-0-to-phase-6-checklist.md). The desktop app and shared core are initial scaffolds only; no product-specific application source has been extracted or merged into this repository. The desktop app currently loads React from esm.sh and invokes Vite through pinned `npx`; vendor dependencies and commit a fully resolved lockfile before hermetic or production release use.
 
 
 ## Immediate milestone: private Secret-Room safety
