@@ -1,0 +1,17 @@
+{
+  "name": "lost-legacies-live",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portfolio coordination and shared packages for the Lost Legacies Live ecosystem",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "pnpm --recursive --if-present run build",
+    "lint": "pnpm --recursive --if-present run lint",
+    "typecheck": "pnpm --recursive --if-present run typecheck",
+    "test": "pnpm --recursive --if-present run test",
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build"
+  }
+}
