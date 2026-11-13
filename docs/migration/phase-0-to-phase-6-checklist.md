@@ -6,7 +6,7 @@
 
 Status key: `[ ]` not started · `[x]` evidenced complete · `[~]` in progress · `[?]` requires verification.
 
-## Phase 0 — Safe baseline and governance
+## Phase 0A — Repository baseline and governance
 
 - [x] Confirm central repository and default branch (`main`).
 - [x] Preserve existing README, architecture decisions, integration roadmap, and Time Engine design record.
@@ -20,6 +20,23 @@ Status key: `[ ]` not started · `[x]` evidenced complete · `[~]` in progress �
 - [ ] Create/update `docs/inventory/repository-register.md` with verified repository URLs, branches, deployment links, owners, licenses, and confidence labels.
 
 **Exit gate:** A reviewable baseline exists, licensing scope is understood, and no source repository has been overwritten or merged wholesale.
+
+## Phase 0B — Private Secret-Room Safety Gate (required before expansion)
+
+Repository setup, the root license, scaffold CI, and a private default do not establish this gate. Track implementation and all 12 charter criteria in [safety-gate issue #2](https://github.com/JUSCR-FreeForAll/lost-legacies-live/issues/2).
+
+- [x] Locate the full Secret-Room charter and bounded implementation on archonfractureback, interoperability revision aef79ce71bd282b1d2104da6316af35aab63ac33. This is source verification only, not test execution.
+- [ ] Record the current Replit project revision separately and reconcile only the bounded module; preserve existing persistence, validation and queued work.
+- [ ] Enforce private/local-only states in application policy and database constraints; use a forward migration for already-applied schemas and test only disposable databases.
+- [ ] Establish authenticated participant ownership before accepting persistent sensitive contributions; verify encryption-key generation, access, recovery and revocation behavior.
+- [ ] Enforce consent purpose, principal, resource, audience, expiry and revocation, including idempotent retries and changed-operation attempts.
+- [ ] Preserve original writing with recoverable revisions and owner-only completion; keep completion qualitative and non-financial.
+- [ ] Keep sharing, invitations, public discovery, payments, tokens, external-service calls and delivery workers unavailable in the private core.
+- [ ] Map all 12 charter criteria to tests. For later collaboration criteria, prove refusal now and explicitly defer positive collaboration tests; do not implement sharing just to satisfy a future criterion.
+- [ ] Run the TypeScript build, relevant unit/security tests and real disposable-PostgreSQL integration tests. Record commands, exact revisions, pass/fail/skip counts and remaining limitations. Mocked database tests and skipped suites are not database-security proof.
+- [ ] Keep the gate open until evidence is recorded. No automatic merge, deployment or production migration is authorized.
+
+**Exit gate:** Evidence demonstrates the private, reversible, participant-owned core. Cross-project synchronization, package extraction, collaboration, auctions and economy expansion remain deferred until this gate passes and their own permissions and release gates are satisfied.
 
 ## Phase 1 — Spine / Time Engine reconciliation
 
@@ -128,5 +145,7 @@ Status key: `[ ]` not started · `[x]` evidenced complete · `[~]` in progress �
 - Never commit secrets, private keys, production credentials, participant personal data, or unredacted logs.
 - Never infer repository URLs, branches, licenses, deployment types, or readiness.
 - Keep reported, proposed, inferred, and verified status distinct.
+- Neither repository creation nor passing empty-workspace CI is completion of the private-core safety gate.
+- Directory, package and service separation do not automatically resolve licensing obligations; verify provenance and terms before extraction.
 - Do not merge product source trees into this portfolio repository by default.
 - A documentation commit does not authorize deployment, data sharing, publication, or financial activity.
