@@ -1,0 +1,17 @@
+{
+  "name": "@lost-legacies/time-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic fixed-tick simulation clock and Spine orchestrator.",
+  "exports": "./src/index.mjs",
+  "scripts": {
+    "build": "node --check src/index.mjs && node --check src/runner.mjs",
+    "test": "node --test",
+    "lint": "node --check src/index.mjs && node --check src/runner.mjs && node --check test/time-engine.test.mjs",
+    "typecheck": "node --check src/index.mjs && node --check src/runner.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
