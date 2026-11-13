@@ -1,0 +1,13 @@
+{
+  "name": "@lost-legacies/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes vite@6.4.1",
+    "build": "npx --yes vite@6.4.1 build",
+    "preview": "npx --yes vite@6.4.1 preview",
+    "lint": "node --check src/main.js",
+    "test": "node --test"
+  }
+}
