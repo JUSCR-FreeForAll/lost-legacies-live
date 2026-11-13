@@ -10,7 +10,7 @@
 | P1-CORE | Integer time and deterministic subsystem order | Implemented; tests added |
 | P1-RECOVERY | Tick and snapshot rollback safety | Implemented; tests added |
 | P1-HOST | Browser/Node runner lifecycle separation | Implemented; tests added |
-| P1-CI | Exact commit passes repository CI | Pending CI evidence |
+| P1-CI | Exact implementation commit passes repository CI | Passed for merge commit `76973a40fb5769b146875f0ac3fb71cee5c27593`; GitHub Actions run [#23](https://github.com/JUSCR-FreeForAll/lost-legacies-live/actions/runs/43449444072) completed successfully (lint, typecheck, build, tests, Gitleaks) |
 | P1-STAGING | Staging revision, health, and read-only verification | Pending; no staging target assumed |
 | P1-RELEASE | Maintainer approval and explicit release authorization | Pending |
 
