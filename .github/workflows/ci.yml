@@ -2,9 +2,9 @@ name: CI & Secret Hygiene
 
 on:
   push:
-    branches: [main, "integration/**"]
+    branches: [main, "integration/**", "feature/**"]
   pull_request:
-    branches: [main]
+    branches: [main, "integration/**"]
 
 permissions:
   contents: read

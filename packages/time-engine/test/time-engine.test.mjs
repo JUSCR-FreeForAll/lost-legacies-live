@@ -86,3 +86,17 @@ test("runner uses clearTimeout for timeout scheduling cleanup", () => {
   runner.stop();
   assert.deepEqual(cleared, [17]);
 });
+
+test("failed tick keeps its elapsed time pending for explicit recovery", () => {
+  const spine = new SpineOrchestrator({ timeEngine: new TimeEngine({ tickDurationUs: 10_000 }) });
+  let shouldFail = true;
+  let value = 0;
+  spine.register({ id: "state", update: () => { if (shouldFail) throw new Error("temporary"); value++; }, snapshot: () => value, restore: x => { value = x; } });
+  assert.throws(() => spine.advance(20_000), /all subsystem state was restored/);
+  assert.equal(spine.time.tick, 0);
+  assert.equal(spine.time.accumulatorUs, 20_000);
+  shouldFail = false;
+  assert.equal(spine.advance(0), 2);
+  assert.equal(spine.time.tick, 2);
+  assert.equal(value, 2);
+});
