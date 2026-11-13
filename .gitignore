@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Build & Cache
+dist/
+build/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Logs & OS
+logs/
+*.log
+.DS_Store
+Thumbs.db
+
+# Local Databases & Test Artifacts
+*.sqlite
+*.sqlite3
+coverage/
+reports/
