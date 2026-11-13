@@ -1,0 +1,21 @@
+Lost Legacies Live
+Copyright 2026 JUSCR-FreeForAll contributors
+
+This product includes software and documentation developed for the
+JUSCR / Lost Legacies ecosystem.
+
+Third-party and related notices:
+- Project materials identify the JUSCR-FreeForAll repository as
+  AGPL-licensed: https://github.com/JUSCR-FreeForAll/JUSCR-FreForAll.
+  Any AGPL-covered material retains its original license and notices.
+  No AGPL code is relicensed under Apache-2.0 by this NOTICE.
+- Time Engine and Spine-related source material is associated with
+  https://github.com/JUSCR-FreeForAll/archonfractureback.
+  Review individual file headers and repository license terms to establish
+  exact provenance and applicable licensing before copying or distributing
+  any source.
+
+The Apache-2.0 license applies to original repository material expressly
+offered under that license. Third-party components, copied material, and
+files carrying their own notices remain subject to their applicable terms.
+See LICENSE and docs/architecture/ADR-002-licensing-and-consent-boundaries.md.
