@@ -17,9 +17,12 @@ Known source and provenance notes:
   and investor ecosystem summary are preserved project materials supplied
   for portfolio documentation. Their authorship and any third-party
   quotations, images, diagrams, or embedded materials must be respected.
-- JUSCR-FreForAll is reported in project feedback as AGPL-licensed. This
-  assertion must be checked against the repository's current LICENSE file
-  before any code is copied, adapted, linked, or redistributed.
+- The root LICENSE in JUSCR-FreeForAll/JUSCR-FreForAll was inspected on
+  2026-11-13 and contains placeholder text referring to AGPL-3.0, not the
+  complete license text. Treat this repository as a reciprocal-license
+  candidate and its exact licensing status as unresolved until the full
+  license and file-level notices are verified. Do not copy or adapt its code
+  based only on the placeholder.
 - Dependencies and assets retain their own license terms. Consult their
   upstream LICENSE, copyright notices, and package metadata.
 
