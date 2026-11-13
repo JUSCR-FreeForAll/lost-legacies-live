@@ -108,8 +108,8 @@ export class SpineOrchestrator {
         // Telemetry is host-specific and deliberately outside deterministic state.
         try { this.onTelemetry({ tick: this.time.tick, durationMs, completed }); } catch { /* telemetry cannot alter simulation */ }
       } catch (error) {
-        // Do not silently discard whole pending ticks after a failed step.
-        this.time.accumulatorUs += (due - i - 1) * this.time.tickDurationUs;
+        // Restore the failed tick and all later pending ticks for explicit retry/recovery.
+        this.time.accumulatorUs += (due - i) * this.time.tickDurationUs;
         throw error;
       }
     }
