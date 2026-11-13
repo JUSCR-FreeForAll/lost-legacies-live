@@ -1,0 +1,29 @@
+Lost Legacies Live
+Copyright 2026 Lost Legacies Live project contributors.
+
+This NOTICE file applies to original materials in this repository only to the
+extent that the relevant contributors have authority to license those
+materials under Apache License 2.0. The root LICENSE does not relicense
+third-party works, upstream repository content, external media, trademarks,
+or materials with separate or unresolved license terms.
+
+Known source and provenance notes:
+
+- The Time / Energy-Economy Engine design was preserved from
+  JUSCR-FreeForAll/archonfractureback, branch
+  codex/six-segment-interoperability, commit 6d126e8f63ee. Review the source
+  repository's license and file-level notices before reuse or redistribution.
+- The Phase 1 Hybrid Build roadmap, Sovereign Circuit executive assessment,
+  and investor ecosystem summary are preserved project materials supplied
+  for portfolio documentation. Their authorship and any third-party
+  quotations, images, diagrams, or embedded materials must be respected.
+- JUSCR-FreForAll is reported in project feedback as AGPL-licensed. This
+  assertion must be checked against the repository's current LICENSE file
+  before any code is copied, adapted, linked, or redistributed.
+- Dependencies and assets retain their own license terms. Consult their
+  upstream LICENSE, copyright notices, and package metadata.
+
+No permission to use any third-party trademark, logo, personal data, or
+unlicensed media is granted by this NOTICE. If provenance or licensing is
+uncertain, treat the material as excluded from the Apache-2.0 grant pending
+review. See docs/architecture/ADR-002-licensing.md.
