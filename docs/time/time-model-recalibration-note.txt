@@ -1,0 +1,33 @@
+<badge color="success"><icon name="check-circle" size="xs" inline/> Committed successfully</badge>
+
+The Lost Legacies Live Time model and Energy/Economy Engine insertion specification has been committed to GitHub.
+
+**Repository:** `JUSCR-FreeForAll/archonfractureback`
+
+**Branch:** `codex/six-segment-interoperability`
+
+**New file:** `docs/time/energy-economy-engine-insertion.md`
+
+<box border radius="lg" padding={3} gap={2}>
+  **Commit details**
+  <title size="lg" tabularNums>6d126e8f63ee</title>
+  <text color="secondary" size="xs">Commit: docs: add Time model and energy economy engine insertion design</text>
+  <text color="success" weight="medium" size="sm">GitHub confirmed the commit.</text>
+  <Link url="https://github.com/JUSCR-FreeForAll/archonfractureback/blob/codex/six-segment-interoperability/docs/time/energy-economy-engine-insertion.md">Open committed specification</Link>
+</box>
+
+### What is now preserved in Codex
+
+1. Six-position choice matrix and dual zeros.
+2. Earth Realms 1–4 and positive/negative boundaries.
+3. Ouroboros and perpendicular tarot paths.
+4. Half-Positive and Half-Negative archetypes.
+5. Secret Rooms as protected individual workspaces.
+6. Energy and economy engine insertion sequence.
+7. Individual legacy rewrites as the first contributions.
+8. Realm 3 and Realm 4 expansion gates.
+9. Privacy, consent, security and technical acceptance criteria.
+
+**One important architectural decision:** The first engine prototype remains private and reversible. Sharing, financial activity, and external deployment each require separate authorization.
+
+This is now a version-controlled design artifact in the JUSCR technical ecosystem, ready for Codex to build against.
