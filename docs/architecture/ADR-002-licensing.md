@@ -1,6 +1,6 @@
-# ADR-002 — Licensing policy and AGPL firewall
+# ADR-002 — Licensing policy and provenance boundaries
 
-- **Status:** Accepted for new original contributions; legacy-content review remains open
+- **Status:** Proposed for maintainer review; contributor authority and legacy-content review remain open
 - **Date:** 2026-11-13
 - **Decision owners:** Repository maintainers
 - **Supersedes:** None
@@ -27,6 +27,12 @@ The root LICENSE expresses the intended license for original contributions in th
 
 This is a repository policy, not a legal opinion. Before commercial distribution or importing substantial source from another repository, obtain a qualified license review.
 
+## No automatic license isolation
+
+A directory name, separate package, process, subdomain, iframe, or service boundary is not by itself a determination of license compatibility or an exemption from upstream obligations. Evaluate the actual code provenance, modifications, combination, distribution and network use. Do not describe these boundaries as a legal “firewall” or promise downstream users that no copyleft obligations apply. A NOTICE records attribution; it does not grant rights the project lacks.
+
+Do not extract or label Time Engine, choice-engine or other upstream-derived packages Apache-2.0 merely because the umbrella repository has that license. Verify exact source revisions and file-level terms, preserve required notices, and obtain appropriate review first. Unknown rights remain unresolved.
+
 ## Implementation rules
 
 - Add an SPDX identifier and copyright attribution to new source files where appropriate.
@@ -41,7 +47,7 @@ This is a repository policy, not a legal opinion. Before commercial distribution
 
 **Benefits**
 - Makes the intended licensing direction explicit for new original work.
-- Reduces accidental copyleft propagation.
+- Makes provenance and compatibility review an explicit prerequisite for reuse.
 - Allows independently reusable contracts and models after provenance review.
 - Preserves product autonomy and upstream attribution.
 
