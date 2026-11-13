@@ -7,7 +7,7 @@
 
 ## Context
 
-Lost Legacies Live coordinates several independent repositories. The supplied project feedback identifies JUSCR-FreForAll as AGPL-licensed. That license assertion must be verified against the source repository's current LICENSE file and the exact code being considered before any reuse. A permissively licensed umbrella repository must not silently absorb code, substantial derived code, assets, or dependencies whose terms are incompatible or not yet understood.
+Lost Legacies Live coordinates several independent repositories. The supplied project feedback identifies JUSCR-FreForAll as AGPL-licensed. A live inspection of `JUSCR-FreeForAll/JUSCR-FreForAll` on 2026-11-13 found that its root LICENSE contains placeholder text referring to AGPL-3.0 rather than the complete license text. Therefore its intended license is indicated but not properly evidenced by the repository file. Treat the repository as a reciprocal-license candidate and do not copy or adapt its code until the full license and file-level notices are verified. A permissively licensed umbrella repository must not silently absorb code, substantial derived code, assets, or dependencies whose terms are incompatible or not yet understood.
 
 The central repository currently serves as a portfolio index and documentation home. Its existing README states that product repositories remain independent and that integration should occur through contracts and adapters rather than bulk copying.
 
