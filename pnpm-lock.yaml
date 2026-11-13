@@ -6,3 +6,5 @@ settings:
 
 importers:
   .: {}
+  apps/desktop: {}
+  packages/core: {}
