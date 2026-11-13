@@ -2,9 +2,9 @@ name: CI & Secret Hygiene
 
 on:
   push:
-    branches: [main, "integration/**"]
+    branches: [main, "integration/**", "feature/**"]
   pull_request:
-    branches: [main]
+    branches: [main, "integration/**"]
 
 permissions:
   contents: read
@@ -43,7 +43,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24"
-          cache: "pnpm"
 
       - name: Guard against committed .env files
         shell: bash
