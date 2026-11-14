@@ -1,0 +1,16 @@
+{
+  "name": "@lost-legacies/security",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase 0 fail-closed security guardrails for private Secret Room workflows.",
+  "scripts": {
+    "build": "node --check src/guardrails.mjs",
+    "test": "node --test",
+    "lint": "node --check src/guardrails.mjs && node --check test/guardrails.test.mjs",
+    "typecheck": "node --check src/guardrails.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
