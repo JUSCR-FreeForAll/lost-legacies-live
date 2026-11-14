@@ -20,14 +20,7 @@ test("frame delta is bounded and excess time is observable", () => {
 
 test("spine orders by locale-independent string comparison", () => {
   const spine = new SpineOrchestrator({ timeEngine: new TimeEngine() });
-  for (const id of ["ä", "Z", "a"]) {
-    spine.register({
-      id,
-      update: () => {},
-      snapshot: () => 0,
-      restore: () => {},
-    });
-  }
+  for (const id of ["ä", "Z", "a"]) spine.register({ id, update() {}, snapshot: () => 0, restore() {} });
   assert.deepEqual(spine.orderedSubsystems().map(s => s.id), ["Z", "a", "ä"]);
 });
 
@@ -43,56 +36,61 @@ test("subsystem failure restores every subsystem and does not commit tick", () =
 
 test("incomplete rollback halts the spine", () => {
   const spine = new SpineOrchestrator();
-  let value = 0;
-  spine.register({ id: "bad", update: () => { value++; throw new Error("update"); }, snapshot: () => 0, restore: () => { throw new Error("rollback"); } });
+  spine.register({ id: "bad", update: () => { throw new Error("update"); }, snapshot: () => 0, restore: () => { throw new Error("rollback"); } });
   assert.throws(() => spine.step(), AggregateError);
   assert.equal(spine.halted, true);
   assert.throws(() => spine.step(), /halted/);
 });
 
-test("async subsystem updates are rejected before commit", () => {
+test("async subsystem callbacks are rejected at registration", () => {
   const spine = new SpineOrchestrator();
-  spine.register({ id: "bad", update: async () => {}, snapshot: () => 0, restore: () => {} });
-  assert.throws(() => spine.step(), /synchronous|Promise/i);
+  assert.throws(() => spine.register({ id: "async", update: async () => {}, snapshot: () => 0, restore() {} }), /synchronous/);
+  assert.throws(() => spine.register({ id: "async-snapshot", update() {}, snapshot: async () => 0, restore() {} }), /synchronous/);
 });
 
-test("canonical serialization sorts nested keys and tags bigint with a reserved array encoding", () => {
+test("thenable update results abort and roll back before tick commit", () => {
+  const spine = new SpineOrchestrator();
+  let value = 0;
+  spine.register({ id: "thenable", update() { value++; return { then() {} }; }, snapshot: () => value, restore: x => { value = x; } });
+  assert.throws(() => spine.step(), /returned a Promise/);
+  assert.equal(value, 0);
+  assert.equal(spine.time.tick, 0);
+});
+
+test("canonical serialization sorts keys and avoids bigint/object marker collision", () => {
   assert.equal(canonicalSerialize({ z: 1n, a: { y: 2, x: 1 } }), '{"a":{"x":1,"y":2},"z":["$bigint","1"]}');
   assert.equal(canonicalSerialize({ b: 2, a: 1 }), canonicalSerialize({ a: 1, b: 2 }));
   assert.throws(() => canonicalSerialize({ "$bigint": "1" }), /reserved \$bigint key/);
 });
 
-test("snapshot rejects duplicate, missing, unexpected and malformed entries before restore", () => {
+test("snapshot rejects invalid entries before restoring any subsystem", () => {
   const spine = new SpineOrchestrator();
   let restores = 0;
   for (const id of ["a", "b"]) spine.register({ id, update() {}, snapshot: () => 0, restore: () => restores++ });
   const valid = captureSnapshot(spine);
   assert.equal(validateSnapshot(valid, spine), true);
-  for (const subsystems of [
-    [{ id: "a", state: 0 }, { id: "a", state: 1 }],
-    [{ id: "a", state: 0 }],
-    [{ id: "a", state: 0 }, { id: "c", state: 0 }],
-    [{ id: "a" }, { id: "b", state: 0 }]
-  ]) assert.throws(() => restoreSnapshot({ version: 1, tick: 4, accumulatorUs: 0, subsystems }, spine));
+  for (const subsystems of [[{ id: "a", state: 0 }, { id: "a", state: 1 }], [{ id: "a", state: 0 }], [{ id: "a", state: 0 }, { id: "c", state: 0 }], [{ id: "a" }, { id: "b", state: 0 }]]) {
+    assert.throws(() => restoreSnapshot({ ...valid, subsystems }, spine));
+  }
   assert.equal(restores, 0);
 });
 
-test("snapshot restore reapplies tick and accumulator state, and clears halted status", () => {
+test("snapshot restore reapplies partial tick and clears halted status", () => {
   const spine = new SpineOrchestrator();
   let value = 7;
   spine.halted = true;
   spine.register({ id: "counter", update() {}, snapshot: () => value, restore: x => { value = x; } });
-  restoreSnapshot({ version: 1, tick: 42, accumulatorUs: 5_000, subsystems: [{ id: "counter", state: 99 }] }, spine);
+  restoreSnapshot({ version: 1, tick: 42, accumulatorUs: 5_000, droppedTimeUs: 9, subsystems: [{ id: "counter", state: 99 }] }, spine);
   assert.equal(value, 99);
   assert.equal(spine.time.tick, 42);
   assert.equal(spine.time.accumulatorUs, 5_000);
+  assert.equal(spine.time.droppedTimeUs, 9);
   assert.equal(spine.halted, false);
 });
 
 test("runner uses clearTimeout for timeout scheduling cleanup", () => {
   const cleared = [];
-  const spine = new SpineOrchestrator();
-  const runner = new SimulationRunner({ spine, setTimer: () => 17, clearTimer: id => cleared.push(id) });
+  const runner = new SimulationRunner({ spine: new SpineOrchestrator(), setTimer: () => 17, clearTimer: id => cleared.push(id) });
   runner.start();
   runner.stop();
   assert.deepEqual(cleared, [17]);
@@ -111,4 +109,3 @@ test("failed tick keeps its elapsed time pending for explicit recovery", () => {
   assert.equal(spine.time.tick, 1);
   assert.equal(value, 1);
 });
-

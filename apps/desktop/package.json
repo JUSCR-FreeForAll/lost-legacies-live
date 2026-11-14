@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "lint": "node --check src/main.jsx",
+    "lint": "node --check vite.config.js",
     "test": "node --test"
   },
   "dependencies": {
