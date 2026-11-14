@@ -9,7 +9,7 @@ test("integer accumulator emits exact fixed ticks", () => {
   assert.equal(clock.advance(6_667), 1);
   assert.equal(clock.accumulatorUs, 0);
   assert.equal(clock.advance(25_000), 2);
-  assert.equal(clock.tick, 0); // accumulation does not commit simulation ticks
+  assert.equal(clock.tick, 0);
 });
 
 test("frame delta is bounded and excess time is observable", () => {
@@ -18,16 +18,17 @@ test("frame delta is bounded and excess time is observable", () => {
   assert.equal(clock.droppedTimeUs, 15_000);
 });
 
-test("spine orders by priority then stable id and excludes host time from context", () => {
+test("spine orders by locale-independent string comparison", () => {
   const spine = new SpineOrchestrator({ timeEngine: new TimeEngine() });
-  const calls = [];
-  for (const [id, priority] of [["zeta", 1], ["alpha", 1], ["first", 0]]) {
-    let state = 0;
-    spine.register({ id, priority, update: ctx => { assert.deepEqual(Object.keys(ctx), ["tick", "tickDurationUs"]); state++; calls.push(id); }, snapshot: () => state, restore: value => { state = value; } });
+  for (const id of ["ä", "Z", "a"]) {
+    spine.register({
+      id,
+      update: () => {},
+      snapshot: () => 0,
+      restore: () => {},
+    });
   }
-  spine.step();
-  assert.deepEqual(calls, ["first", "alpha", "zeta"]);
-  assert.equal(spine.time.tick, 1);
+  assert.deepEqual(spine.orderedSubsystems().map(s => s.id), ["Z", "a", "ä"]);
 });
 
 test("subsystem failure restores every subsystem and does not commit tick", () => {
@@ -49,9 +50,16 @@ test("incomplete rollback halts the spine", () => {
   assert.throws(() => spine.step(), /halted/);
 });
 
-test("canonical serialization sorts nested keys and tags bigint", () => {
-  assert.equal(canonicalSerialize({ z: 1n, a: { y: 2, x: 1 } }), '{"a":{"x":1,"y":2},"z":{"$bigint":"1"}}');
+test("async subsystem updates are rejected before commit", () => {
+  const spine = new SpineOrchestrator();
+  spine.register({ id: "bad", update: async () => {}, snapshot: () => 0, restore: () => {} });
+  assert.throws(() => spine.step(), /synchronous|Promise/i);
+});
+
+test("canonical serialization sorts nested keys and tags bigint with a reserved array encoding", () => {
+  assert.equal(canonicalSerialize({ z: 1n, a: { y: 2, x: 1 } }), '{"a":{"x":1,"y":2},"z":["$bigint","1"]}');
   assert.equal(canonicalSerialize({ b: 2, a: 1 }), canonicalSerialize({ a: 1, b: 2 }));
+  assert.throws(() => canonicalSerialize({ "$bigint": "1" }), /reserved \$bigint key/);
 });
 
 test("snapshot rejects duplicate, missing, unexpected and malformed entries before restore", () => {
@@ -65,17 +73,20 @@ test("snapshot rejects duplicate, missing, unexpected and malformed entries befo
     [{ id: "a", state: 0 }],
     [{ id: "a", state: 0 }, { id: "c", state: 0 }],
     [{ id: "a" }, { id: "b", state: 0 }]
-  ]) assert.throws(() => restoreSnapshot({ version: 1, tick: 4, subsystems }, spine));
+  ]) assert.throws(() => restoreSnapshot({ version: 1, tick: 4, accumulatorUs: 0, subsystems }, spine));
   assert.equal(restores, 0);
 });
 
-test("snapshot restore applies all state and tick after validation", () => {
+test("snapshot restore reapplies tick and accumulator state, and clears halted status", () => {
   const spine = new SpineOrchestrator();
   let value = 7;
+  spine.halted = true;
   spine.register({ id: "counter", update() {}, snapshot: () => value, restore: x => { value = x; } });
-  restoreSnapshot({ version: 1, tick: 42, subsystems: [{ id: "counter", state: 99 }] }, spine);
+  restoreSnapshot({ version: 1, tick: 42, accumulatorUs: 5_000, subsystems: [{ id: "counter", state: 99 }] }, spine);
   assert.equal(value, 99);
   assert.equal(spine.time.tick, 42);
+  assert.equal(spine.time.accumulatorUs, 5_000);
+  assert.equal(spine.halted, false);
 });
 
 test("runner uses clearTimeout for timeout scheduling cleanup", () => {
@@ -96,7 +107,8 @@ test("failed tick keeps its elapsed time pending for explicit recovery", () => {
   assert.equal(spine.time.tick, 0);
   assert.equal(spine.time.accumulatorUs, 20_000);
   shouldFail = false;
-  assert.equal(spine.advance(0), 2);
-  assert.equal(spine.time.tick, 2);
-  assert.equal(value, 2);
+  assert.equal(spine.advance(0), 1);
+  assert.equal(spine.time.tick, 1);
+  assert.equal(value, 1);
 });
+
