@@ -23,6 +23,12 @@ This repository is the documentation, architecture, and coordination home for th
 | `docs/investors/investor-ecosystem-summary.txt` | Preserved investor ecosystem source material |
 | `docs/technical/sovereign-circuit-executive-summary.md` | Sovereign Circuit technical assessment and its explicit limitations |
 | `docs/time/time-model-recalibration-note.txt` | Record of the existing Time Engine specification commit |
+| `docs/architecture/ADR-002-licensing.md` | Proposed Apache-2.0 direction, provenance rules, and license-review boundaries |
+| `docs/migration/phase-0-to-phase-6-checklist.md` | Executable phased migration and release checklist |
+| `docs/integration/replit-source-mapping.md` | Replit workspace, source, and deployment verification register |
+| `docs/contracts/identity-and-interoperability-contracts.md` | Draft identity, consent, event, idempotency, and provenance contracts |
+| `package.json`, `pnpm-workspace.yaml` | pnpm workspace root and package discovery |\n| `apps/desktop/` | React + Vite browser-based portfolio headquarters scaffold |\n| `packages/core/` | Dependency-free shared domain primitives and Node tests |
+| `LICENSE`, `NOTICE` | Licensing terms and third-party/provenance exclusions |
 
 ## Portfolio boundaries
 
@@ -56,4 +62,11 @@ Do not use investor targets, illustrative savings, proposed compliance controls,
 4. Integrate through small adapters and non-destructive pull requests.
 5. Verify tests, staging behavior, security boundaries, and rollback before production release.
 
-See [the integration roadmap](docs/integration/roadmap.md) and [architecture decisions](docs/architecture/decisions.md).
+See [the integration roadmap](docs/integration/roadmap.md), [architecture decisions](docs/architecture/decisions.md), [ADR-002 licensing](docs/architecture/ADR-002-licensing.md), and the [Phase 0–6 checklist](docs/migration/phase-0-to-phase-6-checklist.md). The desktop app and shared core are initial scaffolds only; no product-specific application source has been extracted or merged into this repository. The desktop app currently loads React from esm.sh and invokes Vite through pinned `npx`; vendor dependencies and commit a fully resolved lockfile before hermetic or production release use.
+
+
+## Immediate milestone: private Secret-Room safety
+
+Repository scaffolding is not product-safety acceptance. Complete [Phase 0 — Private Secret-Room Safety Gate](https://github.com/JUSCR-FreeForAll/lost-legacies-live/issues/2) before package extraction, collaboration or economy expansion. The milestone maps all 12 charter criteria to evidence, requires private-only enforcement and purpose-bound consent, and keeps external actions unavailable. Source review is not an executed test result; no deployment is authorized.
+
+Licensing policy remains proposed pending maintainer authority and provenance review. A directory or service boundary does not automatically remove upstream obligations, and the root Apache license does not relicense third-party or unresolved material.
