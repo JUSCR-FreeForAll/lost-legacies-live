@@ -70,3 +70,8 @@ See [the integration roadmap](docs/integration/roadmap.md), [architecture decisi
 Repository scaffolding is not product-safety acceptance. Complete [Phase 0 — Private Secret-Room Safety Gate](https://github.com/JUSCR-FreeForAll/lost-legacies-live/issues/2) before package extraction, collaboration or economy expansion. The milestone maps all 12 charter criteria to evidence, requires private-only enforcement and purpose-bound consent, and keeps external actions unavailable. Source review is not an executed test result; no deployment is authorized.
 
 Licensing policy remains proposed pending maintainer authority and provenance review. A directory or service boundary does not automatically remove upstream obligations, and the root Apache license does not relicense third-party or unresolved material.
+
+
+## Solana event ingestion
+
+The workspace package at [packages/solana-events](packages/solana-events/README.md) provides dual-commitment Anchor log ingestion, decoded-event indexing, retryable persistence, and event adapters for Time Auction and JUSCR. See [the integration and production acceptance gates](docs/integration/solana-event-ingestion.md). This is not a live chain integration: no program ID, IDL, RPC endpoint, or downstream production consumer has been configured or verified.

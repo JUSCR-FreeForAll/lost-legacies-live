@@ -8,3 +8,4 @@ importers:
   .: {}
   apps/desktop: {}
   packages/core: {}
+  packages/solana-events: {}
