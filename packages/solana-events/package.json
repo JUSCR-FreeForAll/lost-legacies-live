@@ -1,1 +1,19 @@
-{"name":"@lost-legacies/solana-events","version":"0.1.0","private":true,"type":"module","exports":{".":"./src/index.js","./sqlite":"./src/sqlite-store.js","./adapters":"./src/adapters.js"},"scripts":{"lint":"node --check src/index.js && node --check src/sqlite-store.js && node --check src/adapters.js","test":"node --test"},"engines":{"node":">=22"}}
+{
+  "name": "@lost-legacies/solana-events",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./sqlite": "./src/sqlite-store.js",
+    "./adapters": "./src/adapters.js",
+    "./recovery": "./src/recovery.js"
+  },
+  "scripts": {
+    "lint": "node --check src/index.js && node --check src/sqlite-store.js && node --check src/adapters.js && node --check src/recovery.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
