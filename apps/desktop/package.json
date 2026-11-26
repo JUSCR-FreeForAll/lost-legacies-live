@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npx --yes vite@6.4.1",
-    "build": "npx --yes vite@6.4.1 build",
-    "preview": "npx --yes vite@6.4.1 preview",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "lint": "node --check src/main.js",
     "test": "node --test"
+  },
+  "devDependencies": {
+    "vite": "6.4.1"
   }
 }
