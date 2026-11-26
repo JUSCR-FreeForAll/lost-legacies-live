@@ -110,6 +110,8 @@ test("CloudEvent metadata and adapters enforce finality, allowlists and authoriz
   const cloud = toCloudEvent(source, { projectId: "timeauction" });
   assert.equal(cloud.data.project_id, "timeauction");
   assert.equal(cloud.data.provenance.anchorVersion, "1.2.2");
+  assert.equal(JSON.parse(JSON.stringify(toCloudEvent(event("finalized"), { projectId: "juscr" })))
+    .data.payload.amount, "123");
   const delivered = [];
   const dispatch = createTimeAuctionAdapter({
     dispatch: e => delivered.push(e), acceptedEvents: ["AuctionCreated"],

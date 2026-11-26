@@ -39,7 +39,7 @@ test("backfill rejects unanchored scans and missing history without moving check
   const store = new MemoryEventStore(), seen = [];
   const config = {
     provider: makeProvider(), programId: "program", store,
-    decodeTransaction: decode, onEvent: e => seen.push(e)
+    decodeTransaction: decode, onEvent: e => seen.push(e), provenance
   };
   await assert.rejects(runFinalizedBackfill(config), /starting signature/);
   await assert.rejects(runFinalizedBackfill({
@@ -54,7 +54,7 @@ test("backfill does not acknowledge or advance checkpoint if dispatch fails", as
   let failed = false;
   await assert.rejects(runFinalizedBackfill({
     provider: makeProvider(), programId: "program", store, startingSignature: "anchor",
-    decodeTransaction: decode,
+    decodeTransaction: decode, provenance,
     onEvent: () => { if (!failed) { failed = true; throw Error("downstream offline"); } }
   }), /downstream offline/);
   assert.equal(await store.getCheckpoint("solana:program:finalized"), null);

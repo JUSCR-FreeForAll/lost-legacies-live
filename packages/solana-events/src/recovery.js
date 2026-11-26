@@ -17,6 +17,10 @@ export async function runFinalizedBackfill({
       typeof decodeTransaction !== "function" || typeof onEvent !== "function") {
     throw TypeError("Missing finalized history provider or decoder");
   }
+  if (!["anchorVersion", "parserVersion", "idlVersion"].every(key =>
+    typeof provenance?.[key] === "string" && provenance[key].trim())) {
+    throw TypeError("Finalized-history Anchor, parser and IDL provenance required");
+  }
   if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 1000 ||
       !Number.isInteger(maxPages) || maxPages < 1) throw TypeError("Invalid scan bounds");
   const checkpoint = await store.getCheckpoint(checkpointName) ?? startingSignature;

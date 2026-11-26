@@ -1,4 +1,6 @@
 const slug = value => String(value).replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+const jsonSafe = value => JSON.parse(JSON.stringify(value ?? {},
+  (_key, field) => typeof field === "bigint" ? field.toString() : field));
 
 export function toCloudEvent(event, { projectId, sourcePrefix = "urn:lost-legacies-live:solana" }) {
   if (!projectId || !event?.programId || !event?.signature || !event?.eventKey) {
@@ -21,7 +23,7 @@ export function toCloudEvent(event, { projectId, sourcePrefix = "urn:lost-legaci
       commitment: event.commitment,
       contract_version: "1.0.0",
       provenance: event.provenance ?? null,
-      payload: event.data
+      payload: jsonSafe(event.data)
     }
   };
 }
