@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'wouter';
 import { Check, Copy, Download, EyeOff, KeyRound, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,11 +10,15 @@ import { errorInfo } from '@/lib/vault';
 export function CopyButton({ value, label = 'Copy', testId, size = 'sm', variant = 'outline' }: { value: string; label?: string; testId?: string; size?: 'sm' | 'default'; variant?: 'outline' | 'ghost' | 'default' }) {
   const [copied, setCopied] = useState(false);
   return (
-    <Button type="button" size={size} variant={variant} data-testid={testId}
-      onClick={() => { void navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>
-      {copied ? <Check className="mr-1.5 h-3.5 w-3.5 text-verdigris" /> : <Copy className="mr-1.5 h-3.5 w-3.5" />}
-      {copied ? 'Copied' : label}
-    </Button>
+    <>
+      <Button type="button" size={size} variant={variant} data-testid={testId}
+        onClick={() => { void navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>
+        {copied ? <Check className="mr-1.5 h-3.5 w-3.5 text-verdigris" /> : <Copy className="mr-1.5 h-3.5 w-3.5" />}
+        {copied ? 'Copied' : label}
+      </Button>
+      {/* A changed button label is not reliably announced; a status region is. */}
+      <span role="status" className="sr-only">{copied ? 'Copied to clipboard' : ''}</span>
+    </>
   );
 }
 
@@ -29,11 +33,20 @@ export function downloadText(name: string, text: string, mime = 'text/plain') {
 }
 export const today = () => new Date().toISOString().slice(0, 10);
 
-/** One-time secret display. Values live only in parent state; dismiss clears them. */
-export function SecretBox({ title, note, values, onDismiss, dismissLabel = 'I have stored this safely', testId, numbered, filename }: {
-  title: string; note: ReactNode; values: string[]; onDismiss: () => void; dismissLabel?: string; testId: string; numbered?: boolean; filename?: string;
+/**
+ * One-time secret display. Values live only in parent state; dismiss clears them.
+ * It takes focus when it appears (unless focusOnMount is false), because the
+ * control that revealed it is usually gone and a screen reader user would
+ * otherwise not learn that a secret is now on screen.
+ */
+export function SecretBox({ title, note, values, onDismiss, dismissLabel = 'I have stored this safely', testId, numbered, filename, focusOnMount = true }: {
+  title: string; note: ReactNode; values: string[]; onDismiss: () => void; dismissLabel?: string; testId: string; numbered?: boolean; filename?: string; focusOnMount?: boolean;
 }) {
   const text = values.join('\n');
+  const headingId = useId();
+  const noteId = useId();
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (focusOnMount) ref.current?.focus(); }, [focusOnMount]);
   const print = () => {
     const w = window.open('', '_blank', 'width=600,height=700');
     if (!w) return;
@@ -46,13 +59,13 @@ export function SecretBox({ title, note, values, onDismiss, dismissLabel = 'I ha
     w.print();
   };
   return (
-    <div className="rise rounded-md border-2 border-primary/40 bg-primary/[0.04] p-4" data-testid={`secret-${testId}`}>
+    <div ref={ref} tabIndex={-1} role="region" aria-labelledby={headingId} aria-describedby={noteId} data-secret-box
+      className="rise rounded-md border-2 border-primary/40 bg-primary/[0.04] p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring" data-testid={`secret-${testId}`}>
       <div className="mb-1 flex items-center gap-2">
         <KeyRound className="h-4 w-4 text-primary" />
-        <span className="eyebrow !text-primary">Shown once</span>
-        <span className="text-sm font-semibold">{title}</span>
+        <h3 id={headingId} className="flex flex-wrap items-center gap-2"><span className="eyebrow !text-primary">Shown once</span><span className="text-sm font-semibold">{title}</span></h3>
       </div>
-      <p className="mb-3 text-xs leading-relaxed text-muted-foreground">{note}</p>
+      <p id={noteId} className="mb-3 text-xs leading-relaxed text-muted-foreground">{note}</p>
       {numbered ? (
         <ol className="grid grid-cols-1 gap-x-6 gap-y-1 rounded border border-border bg-card p-3 font-mono text-sm sm:grid-cols-2">
           {values.map((v, i) => <li key={v} className="flex gap-3"><span className="text-muted-foreground">{String(i + 1).padStart(2, '0')}</span><span data-testid={`text-${testId}-${i}`}>{v}</span></li>)}
@@ -140,7 +153,7 @@ export function Countdown({ to }: { to: string }) {
 export function Consequences({ items }: { items: ReactNode[] }) {
   return (
     <ul className="space-y-1.5 text-sm">
-      {items.map((it, i) => <li key={i} className="flex gap-2.5"><span className="mt-2 h-1 w-3 shrink-0 bg-primary/60" /><span className="text-foreground/85">{it}</span></li>)}
+      {items.map((it, i) => <li key={i} className="flex gap-2.5"><span aria-hidden="true" className="mt-2 h-1 w-3 shrink-0 bg-primary/60" /><span className="text-foreground/85">{it}</span></li>)}
     </ul>
   );
 }

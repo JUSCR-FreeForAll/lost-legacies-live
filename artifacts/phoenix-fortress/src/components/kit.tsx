@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { cloneElement, isValidElement, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { AlertTriangle, Check, Copy, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,8 +32,18 @@ export function Panel({ title, meta, children, className }: { title?: ReactNode;
   );
 }
 
+// A retry clears the query error while it refetches, which unmounts the panel.
+// If the retry fails again, the new panel takes focus back onto its Retry button.
+let retryFocus: { label: string; at: number } | null = null;
+
 export function ErrorPanel({ error, onRetry, label = 'Request failed' }: { error: unknown; onRetry?: () => void; label?: string }) {
   const e = errorInfo(error);
+  const retryRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!retryFocus || retryFocus.label !== label) return;
+    if (Date.now() - retryFocus.at < 30_000) retryRef.current?.focus();
+    retryFocus = null;
+  }, [label]);
   return (
     <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm" data-testid="status-error">
       <div className="flex items-start gap-3">
@@ -48,7 +58,7 @@ export function ErrorPanel({ error, onRetry, label = 'Request failed' }: { error
           </div>
         </div>
         {onRetry && (
-          <Button size="sm" variant="outline" onClick={onRetry} data-testid="button-retry">
+          <Button ref={retryRef} size="sm" variant="outline" onClick={() => { retryFocus = { label, at: Date.now() }; onRetry(); }} data-testid="button-retry">
             <RotateCw className="mr-1.5 h-3.5 w-3.5" /> Retry
           </Button>
         )}
@@ -81,7 +91,8 @@ export function Empty({ title, children, action }: { title: string; children?: R
 
 export function RowsSkeleton({ rows = 4 }: { rows?: number }) {
   return (
-    <div className="space-y-2" aria-busy="true">
+    <div className="space-y-2" role="status" aria-busy="true">
+      <span className="sr-only">Loading</span>
       {Array.from({ length: rows }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
     </div>
   );
@@ -90,16 +101,20 @@ export function RowsSkeleton({ rows = 4 }: { rows?: number }) {
 export function Hash({ value, n = 10, testId }: { value: string; n?: number; testId?: string }) {
   const [copied, setCopied] = useState(false);
   return (
+    <>
     <button
       type="button"
       title={value}
+      aria-label={`${shortHash(value, n)}, copy full value`}
       data-testid={testId}
       onClick={() => { void navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1200); }}
       className="group inline-flex items-center gap-1 rounded px-1 font-mono text-xs text-foreground/80 hover:bg-muted"
     >
       {shortHash(value, n)}
-      {copied ? <Check className="h-3 w-3 text-verdigris" /> : <Copy className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60" />}
+      {copied ? <Check className="h-3 w-3 text-verdigris" /> : <Copy className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60" />}
     </button>
+    <span role="status" className="sr-only">{copied ? 'Copied to clipboard' : ''}</span>
+    </>
   );
 }
 
@@ -115,11 +130,16 @@ export function Tag({ tone = 'neutral', children, testId }: { tone?: keyof typeo
 }
 
 export function Field({ label, hint, children, htmlFor }: { label: string; hint?: ReactNode; children: ReactNode; htmlFor?: string }) {
+  // Link the hint to the control so screen readers announce it with the label.
+  const hintId = htmlFor && hint ? `${htmlFor}-hint` : undefined;
+  const control = hintId && isValidElement(children)
+    ? cloneElement(children as ReactElement<{ 'aria-describedby'?: string }>, { 'aria-describedby': hintId })
+    : children;
   return (
     <div className="space-y-1.5">
       <label htmlFor={htmlFor} className="text-xs font-medium">{label}</label>
-      {children}
-      {hint && <p className="text-[11px] leading-snug text-muted-foreground">{hint}</p>}
+      {control}
+      {hint && <p id={hintId} className="text-[11px] leading-snug text-muted-foreground">{hint}</p>}
     </div>
   );
 }

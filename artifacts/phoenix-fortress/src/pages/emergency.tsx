@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
 import { Link } from 'wouter';
 import { KeySquare, LogOut, Unplug } from 'lucide-react';
 import { useEmergencyRecover, useRevokeSessions, useRevokeAllCredentials, type EmergencyResult, type SessionRevocation } from '@workspace/api-client-react';
@@ -29,16 +29,21 @@ export default function EmergencyPage() {
 function Step({ n, title, children }: { n: string; title: string; children: ReactNode }) {
   return (
     <li className="rise grid gap-4 md:grid-cols-[56px_1fr]">
-      <div className="hidden font-display text-4xl text-primary/70 md:block">{n}</div>
-      <Panel title={<span><span className="mr-2 font-mono text-xs text-primary md:hidden">{n}</span>{title}</span>}>{children}</Panel>
+      <div aria-hidden="true" className="hidden font-display text-4xl text-primary md:block">{n}</div>
+      <Panel title={<span><span aria-hidden="true" className="mr-2 font-mono text-xs text-primary md:hidden">{n}</span><span className="sr-only">Step {n}: </span>{title}</span>}>{children}</Panel>
     </li>
   );
 }
 
-function Confirm({ open, onOpenChange, title, body, action, pending, error, onConfirm }: { open: boolean; onOpenChange: (o: boolean) => void; title: string; body: string; action: string; pending: boolean; error: unknown; onConfirm: () => void }) {
+/**
+ * The dialog is opened from a plain button (not a Radix trigger), so Radix has
+ * nowhere to return focus on close. focusAfter names where focus goes: the
+ * opening button after "Not now", or the result message after success.
+ */
+function Confirm({ open, onOpenChange, title, body, action, pending, error, onConfirm, focusAfter }: { open: boolean; onOpenChange: (o: boolean) => void; title: string; body: string; action: string; pending: boolean; error: unknown; onConfirm: () => void; focusAfter: RefObject<HTMLElement | null>[] }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); focusAfter.map((r) => r.current).find(Boolean)?.focus(); }}>
         <AlertDialogHeader><AlertDialogTitle className="font-display font-medium">{title}</AlertDialogTitle><AlertDialogDescription>{body}</AlertDialogDescription></AlertDialogHeader>
         <InlineError error={error} />
         <AlertDialogFooter>
@@ -56,15 +61,17 @@ function SignOutOthers() {
   const m = useRevokeSessions();
   const [open, setOpen] = useState(false);
   const [res, setRes] = useState<SessionRevocation | null>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const done = useRef<HTMLParagraphElement>(null);
   return (
     <div className="space-y-4">
       <Consequences items={['Every other browser and device signed in to this account is signed out.', 'This browser stays signed in.', 'Anyone holding a stolen device would need your password again.']} />
       {res ? (
-        <p className="rounded border border-verdigris/30 bg-verdigris/10 px-3 py-2 text-sm" data-testid="status-sessions-revoked">Done at {fmtDate(res.revokedAt)}. {res.providerSessionsRevoked} session{res.providerSessionsRevoked === 1 ? '' : 's'} ended via {res.provider}.</p>
+        <p ref={done} tabIndex={-1} role="status" className="rounded border border-verdigris/30 bg-verdigris/10 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring" data-testid="status-sessions-revoked">Done at {fmtDate(res.revokedAt)}. {res.providerSessionsRevoked} session{res.providerSessionsRevoked === 1 ? '' : 's'} ended via {res.provider}.</p>
       ) : (
-        <Button onClick={() => setOpen(true)} data-testid="button-revoke-sessions"><LogOut className="mr-1.5 h-4 w-4" />Sign out everywhere else</Button>
+        <Button ref={btn} onClick={() => setOpen(true)} data-testid="button-revoke-sessions"><LogOut className="mr-1.5 h-4 w-4" />Sign out everywhere else</Button>
       )}
-      <Confirm open={open} onOpenChange={setOpen} title="Sign out all other sessions?" body="Other devices will be signed out immediately. You stay signed in here." action="Sign them out" pending={m.isPending} error={m.error}
+      <Confirm open={open} onOpenChange={setOpen} title="Sign out all other sessions?" body="Other devices will be signed out immediately. You stay signed in here." action="Sign them out" pending={m.isPending} error={m.error} focusAfter={[done, btn]}
         onConfirm={() => m.mutate({ data: { idempotencyKey: idem.key } }, { onSuccess: (r) => { idem.rotate(); setRes(r); setOpen(false); void invalidate(); } })} />
     </div>
   );
@@ -76,15 +83,17 @@ function RevokeAll() {
   const m = useRevokeAllCredentials();
   const [open, setOpen] = useState(false);
   const [count, setCount] = useState<number | null>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const done = useRef<HTMLParagraphElement>(null);
   return (
     <div className="space-y-4">
       <Consequences items={['Every ingest and export token stops working at once.', 'Schedulers pushing backups will fail until you issue new credentials in Settings.', 'This cannot be undone; revoked tokens never come back.']} />
       {count !== null ? (
-        <p className="rounded border border-verdigris/30 bg-verdigris/10 px-3 py-2 text-sm" data-testid="status-credentials-revoked">{count} credential{count === 1 ? '' : 's'} revoked.</p>
+        <p ref={done} tabIndex={-1} role="status" className="rounded border border-verdigris/30 bg-verdigris/10 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring" data-testid="status-credentials-revoked">{count} credential{count === 1 ? '' : 's'} revoked.</p>
       ) : (
-        <Button variant="outline" onClick={() => setOpen(true)} data-testid="button-revoke-all-credentials"><Unplug className="mr-1.5 h-4 w-4" />Revoke all credentials</Button>
+        <Button ref={btn} variant="outline" onClick={() => setOpen(true)} data-testid="button-revoke-all-credentials"><Unplug className="mr-1.5 h-4 w-4" />Revoke all credentials</Button>
       )}
-      <Confirm open={open} onOpenChange={setOpen} title="Revoke every credential?" body="All active API tokens for this vault will be rejected from now on. Backups already stored are untouched." action="Revoke all" pending={m.isPending} error={m.error}
+      <Confirm open={open} onOpenChange={setOpen} title="Revoke every credential?" body="All active API tokens for this vault will be rejected from now on. Backups already stored are untouched." action="Revoke all" pending={m.isPending} error={m.error} focusAfter={[done, btn]}
         onConfirm={() => m.mutate({ data: { idempotencyKey: idem.key } }, { onSuccess: (r) => { idem.rotate(); setCount(r.count); setOpen(false); void invalidate(); } })} />
     </div>
   );
@@ -102,9 +111,9 @@ function CodeRecovery() {
   };
   if (res) return <EmergencyResultView res={res} onChange={setRes} />;
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} aria-label="Recover with a saved code" className="space-y-4">
       <Consequences items={['Uses up one saved recovery code.', 'Signs out every session and revokes every API credential.', 'Issues a replacement recovery key and a fresh set of codes, each shown once.']} />
-      <Field label="Recovery code" htmlFor="em-code" hint="From your printed or saved list. Spaces and dashes as written are fine.">
+      <Field label="Recovery code" htmlFor="em-code" hint="From your printed or saved list, at least 16 characters. Spaces and dashes as written are fine.">
         <Input id="em-code" autoComplete="off" spellCheck={false} className="font-mono" value={code} onChange={(e) => setCode(e.target.value)} data-testid="input-recovery-code" />
       </Field>
       <InlineError error={m.error} />

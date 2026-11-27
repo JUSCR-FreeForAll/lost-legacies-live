@@ -14,7 +14,9 @@ because development evidence cannot prove the published environment.
 3. Diagnostics (development) shows every critical gate **passed** (not stale)
    and readiness **ready**.
 4. G13 accessibility review has been done by a person: complete the recovery
-   path with keyboard only and with a screen reader, at 200% zoom.
+   path with keyboard only and with a screen reader, at 200% zoom. The
+   keyboard review, fixes and the remaining sign-off checklist are in
+   `evidence/g13-accessibility-review.md`.
 5. Production secrets are set (see below) and differ from development.
 
 ## Production secrets

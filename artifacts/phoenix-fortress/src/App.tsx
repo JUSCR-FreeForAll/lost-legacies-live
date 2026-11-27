@@ -145,7 +145,7 @@ function HomeRedirect() {
   return (
     <>
       <Show when="signed-in"><Redirect to="/overview" /></Show>
-      <Show when="signed-out"><Landing /><FloatingQuickExit /></Show>
+      <Show when="signed-out"><FloatingQuickExit /><Landing /></Show>
     </>
   );
 }

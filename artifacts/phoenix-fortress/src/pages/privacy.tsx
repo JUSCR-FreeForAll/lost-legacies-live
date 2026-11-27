@@ -44,20 +44,30 @@ function ConsentRow({ c }: { c: Consent }) {
   const invalidate = useInvalidateAll();
   const m = useSetConsent();
   const granted = c.state === 'granted';
-  const set = (on: boolean) => m.mutate({ purpose: c.purpose, data: { state: on ? 'granted' : 'withdrawn', idempotencyKey: idem.key } }, { onSuccess: () => { idem.rotate(); void invalidate(); } });
+  const title = purposeTitle[c.purpose] ?? c.purpose;
+  const [announce, setAnnounce] = useState('');
+  // aria-disabled rather than disabled while saving: disabling the focused
+  // switch would drop keyboard focus to the page body.
+  const set = (on: boolean) => {
+    if (m.isPending) return;
+    m.mutate({ purpose: c.purpose, data: { state: on ? 'granted' : 'withdrawn', idempotencyKey: idem.key } }, {
+      onSuccess: () => { idem.rotate(); void invalidate(); setAnnounce(`${title}: consent ${on ? 'granted' : 'withdrawn'}.`); },
+    });
+  };
   return (
     <li className="py-3.5" data-testid={`row-consent-${c.purpose}`}>
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium">{purposeTitle[c.purpose] ?? c.purpose}</span>
+            <span className="text-sm font-medium">{title}</span>
             <Tag tone={granted ? 'good' : c.state === 'withdrawn' ? 'warn' : 'neutral'}>{c.state.replace('_', ' ')}</Tag>
           </div>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{c.description}</p>
           <div className="mt-1 font-mono text-[10px] text-muted-foreground">{c.purpose} · v{c.version}{c.updatedAt && ` · ${fmtDate(c.updatedAt)}`}</div>
         </div>
-        <Switch checked={granted} disabled={m.isPending} onCheckedChange={set} aria-label={`Consent for ${c.purpose}`} data-testid={`switch-consent-${c.purpose}`} />
+        <Switch checked={granted} aria-disabled={m.isPending || undefined} onCheckedChange={set} aria-label={`Consent for ${title}`} data-testid={`switch-consent-${c.purpose}`} />
       </div>
+      <span role="status" className="sr-only">{announce}</span>
       <div className="mt-2"><InlineError error={m.error} /></div>
     </li>
   );
@@ -76,7 +86,7 @@ function SafetyPanel() {
     <Panel title="Safety">
       <div className="space-y-5">
         <Row icon={EyeOff} title="Safe Recovery mode" desc="Neutral page title ('Notes'), no notification counts, Quick exit kept prominent. For when someone may glance at your screen.">
-          <Switch checked={identity.safeMode} disabled={m.isPending} onCheckedChange={(v) => save({ safeMode: v })} data-testid="switch-safe-mode" />
+          <Switch checked={identity.safeMode} aria-disabled={m.isPending || undefined} onCheckedChange={(v) => { if (!m.isPending) save({ safeMode: v }); }} aria-label="Safe Recovery mode" data-testid="switch-safe-mode" />
         </Row>
         <Row icon={Languages} title="Language" desc="Used for server messages and notices.">
           <select className={cn(selectCls, 'w-32')} value={identity.locale} disabled={m.isPending} onChange={(e) => save({ locale: e.target.value as 'en' | 'es' })} data-testid="select-locale">
@@ -100,9 +110,9 @@ function SafetyPanel() {
 
 function Row({ icon: Icon, title, desc, children }: { icon: typeof EyeOff; title: string; desc: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex flex-wrap items-start gap-3">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-      <div className="min-w-0 flex-1"><div className="text-sm font-medium">{title}</div><p className="text-xs text-muted-foreground">{desc}</p></div>
+      <div className="min-w-[10rem] flex-1"><div className="text-sm font-medium">{title}</div><p className="text-xs text-muted-foreground">{desc}</p></div>
       {children}
     </div>
   );

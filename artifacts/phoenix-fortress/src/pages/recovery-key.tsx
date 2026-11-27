@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Download, KeyRound, RefreshCw, ShieldCheck } from 'lucide-react';
 import {
   useGetRecoveryStatus, useSetupRecoveryKey, useConfirmRecoveryKey, useRotateRecoveryKey, useConfirmRecoveryRotation,
@@ -56,10 +56,21 @@ function KeyLifecycle({ status, pendingMode, pendingExpiresAt, fingerprint }: { 
   const [retype, setRetype] = useState('');
   const [current, setCurrent] = useState('');
   const [rotating, setRotating] = useState(false);
+  // Every step replaces the control that triggered it, so focus is placed
+  // explicitly; otherwise keyboard and screen reader users land on the page body.
+  const rootRef = useRef<HTMLElement | null>(null);
+  const setRoot = (el: HTMLElement | null) => { rootRef.current = el; };
+  const rotateButtonRef = useRef<HTMLButtonElement>(null);
+  const focusNext = useRef<'root' | 'rotate' | null>(null);
+  useEffect(() => {
+    // After confirming, wait until the server reports the key active before moving focus.
+    if (focusNext.current === 'root' && status !== 'pending' && pendingMode !== 'rotation') { rootRef.current?.focus(); focusNext.current = null; }
+    if (focusNext.current === 'rotate') { rotateButtonRef.current?.focus(); focusNext.current = null; }
+  });
 
   const mode = issued?.status === 'pending_rotation' || pendingMode === 'rotation' ? 'rotation' : 'setup';
   const onIssued = (r: RecoveryKeyIssued) => { idem.rotate(); setIssued(r); setStage('show'); setCurrent(''); setRotating(false); void invalidate(); };
-  const done = () => { idem.rotate(); setIssued(null); setRetype(''); setStage('idle'); void invalidate(); toast({ title: 'Recovery key active', description: 'Keep it somewhere only you can reach.' }); };
+  const done = () => { idem.rotate(); setIssued(null); setRetype(''); setStage('idle'); focusNext.current = 'root'; void invalidate(); toast({ title: 'Recovery key active', description: 'Keep it somewhere only you can reach.' }); };
 
   const submitConfirm = (e: FormEvent) => {
     e.preventDefault();
@@ -70,7 +81,7 @@ function KeyLifecycle({ status, pendingMode, pendingExpiresAt, fingerprint }: { 
 
   if (stage === 'show' && issued) {
     return (
-      <div className="space-y-4">
+      <div ref={setRoot} tabIndex={-1} className="space-y-4 focus:outline-none">
         <SecretBox title="Your recovery key" testId="recovery-key" values={[issued.recoveryKey]}
           note={<>Write it down or store it in a password manager now. Fingerprint {issued.fingerprint}. It must be confirmed before {fmtDate(issued.expiresAt)}, or it lapses.</>}
           dismissLabel="I have written it down" onDismiss={() => { setIssued({ ...issued, recoveryKey: '' }); setStage('retype'); }} />
@@ -82,13 +93,13 @@ function KeyLifecycle({ status, pendingMode, pendingExpiresAt, fingerprint }: { 
   // recovery on another page or device) must still be confirmable here.
   if (stage === 'retype' || status === 'pending' || pendingMode === 'rotation') {
     return (
-      <form onSubmit={submitConfirm} className="space-y-3">
+      <form ref={setRoot} tabIndex={-1} onSubmit={submitConfirm} className="space-y-3 focus:outline-none">
         <p className="text-sm text-muted-foreground">
           {mode === 'rotation' ? 'A replacement key is pending. Your current key keeps working until you confirm it.' : 'Setup is pending.'} Type the key from where you stored it. This proves you kept a usable copy; it is not activated until you do.
           {pendingExpiresAt && <> Expires {relTime(pendingExpiresAt)}.</>}
         </p>
-        <Field label="Re-type the recovery key" htmlFor="rk-retype">
-          <Input id="rk-retype" autoComplete="off" spellCheck={false} value={retype} onChange={(e) => setRetype(e.target.value)} className="font-mono" placeholder="from your written copy" data-testid="input-recovery-key-confirm" />
+        <Field label="Re-type the recovery key" htmlFor="rk-retype" hint="The full key, at least 40 characters. Spaces and line breaks at the ends are ignored.">
+          <Input id="rk-retype" autoFocus={stage === 'retype'} autoComplete="off" spellCheck={false} value={retype} onChange={(e) => setRetype(e.target.value)} className="font-mono" placeholder="from your written copy" data-testid="input-recovery-key-confirm" />
         </Field>
         <InlineError error={confirm.error ?? confirmRot.error} />
         <div className="flex flex-wrap gap-2">
@@ -102,7 +113,7 @@ function KeyLifecycle({ status, pendingMode, pendingExpiresAt, fingerprint }: { 
 
   if (status === 'unconfigured') {
     return (
-      <div className="space-y-3">
+      <div ref={setRoot} tabIndex={-1} className="space-y-3 focus:outline-none">
         <p className="text-sm text-muted-foreground">No recovery key yet. Creating one shows a long key exactly once; you will then type it back to prove you stored it.</p>
         <InlineError error={setup.error} />
         <Button onClick={() => setup.mutate(undefined, { onSuccess: onIssued })} disabled={setup.isPending} data-testid="button-setup-recovery-key"><KeyRound className="mr-1.5 h-4 w-4" />{setup.isPending ? 'Generating' : 'Create recovery key'}</Button>
@@ -111,16 +122,17 @@ function KeyLifecycle({ status, pendingMode, pendingExpiresAt, fingerprint }: { 
   }
 
   return (
-    <div className="space-y-4">
+    <div ref={setRoot} tabIndex={-1} className="space-y-4 focus:outline-none">
+      <p className="sr-only">Recovery key is active.</p>
       <div className="flex items-center gap-2 text-sm"><span className="text-muted-foreground">Fingerprint</span>{fingerprint && <Hash value={fingerprint} n={12} testId="text-recovery-fingerprint" />}</div>
       {!rotating ? (
-        <Button variant="outline" onClick={() => setRotating(true)} data-testid="button-start-rotate"><RefreshCw className="mr-1.5 h-4 w-4" />Rotate recovery key</Button>
+        <Button ref={rotateButtonRef} variant="outline" onClick={() => setRotating(true)} data-testid="button-start-rotate"><RefreshCw className="mr-1.5 h-4 w-4" />Rotate recovery key</Button>
       ) : (
-        <form onSubmit={(e) => { e.preventDefault(); rotate.mutate({ data: { currentRecoveryKey: current.trim(), idempotencyKey: idem.key } }, { onSuccess: onIssued }); }} className="space-y-3 rounded-md border border-border bg-muted/40 p-4">
+        <form aria-label="Rotate recovery key" onSubmit={(e) => { e.preventDefault(); rotate.mutate({ data: { currentRecoveryKey: current.trim(), idempotencyKey: idem.key } }, { onSuccess: onIssued }); }} className="space-y-3 rounded-md border border-border bg-muted/40 p-4">
           <p className="text-xs text-muted-foreground">Rotation needs the current key. The old key keeps working until you confirm the new one.</p>
-          <Field label="Current recovery key" htmlFor="rk-current"><Input id="rk-current" autoComplete="off" spellCheck={false} className="font-mono" value={current} onChange={(e) => setCurrent(e.target.value)} data-testid="input-current-recovery-key" /></Field>
+          <Field label="Current recovery key" htmlFor="rk-current" hint="At least 40 characters."><Input id="rk-current" autoFocus autoComplete="off" spellCheck={false} className="font-mono" value={current} onChange={(e) => setCurrent(e.target.value)} data-testid="input-current-recovery-key" /></Field>
           <InlineError error={rotate.error} />
-          <div className="flex gap-2"><Button type="submit" disabled={current.trim().length < 40 || rotate.isPending} data-testid="button-rotate-recovery-key">{rotate.isPending ? 'Rotating' : 'Issue new key'}</Button><Button type="button" variant="ghost" onClick={() => { setRotating(false); setCurrent(''); }}>Cancel</Button></div>
+          <div className="flex gap-2"><Button type="submit" disabled={current.trim().length < 40 || rotate.isPending} data-testid="button-rotate-recovery-key">{rotate.isPending ? 'Rotating' : 'Issue new key'}</Button><Button type="button" variant="ghost" onClick={() => { focusNext.current = 'rotate'; setRotating(false); setCurrent(''); }}>Cancel</Button></div>
         </form>
       )}
     </div>
@@ -133,26 +145,37 @@ function Codes({ remaining, total, createdAt }: { remaining: number; total: numb
   const m = useRegenerateRecoveryCodes();
   const [codes, setCodes] = useState<string[] | null>(null);
   const [armed, setArmed] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const refocus = useRef<'button' | 'cancel' | null>(null);
+  useEffect(() => {
+    // When the replace warning appears, put focus on the safe choice so a
+    // repeated Enter cannot invalidate every code by accident.
+    if (refocus.current === 'button') buttonRef.current?.focus();
+    if (refocus.current === 'cancel') cancelRef.current?.focus();
+    refocus.current = null;
+  });
   if (codes) {
     return <SecretBox title="Recovery codes" numbered testId="recovery-codes" values={codes} filename={`phoenix-fortress-codes-${today()}.txt`}
-      note="Each code works once, for emergency sign-in from a new device. Any older codes stopped working just now." onDismiss={() => setCodes(null)} />;
+      note="Each code works once, for emergency sign-in from a new device. Any older codes stopped working just now." onDismiss={() => { refocus.current = 'button'; setCodes(null); }} />;
   }
   return (
     <div className="space-y-3">
       {total > 0 && (
         <div>
-          <div className="mb-1.5 flex gap-1">{Array.from({ length: total }).map((_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i < remaining ? 'bg-verdigris' : 'bg-border'}`} />)}</div>
+          <div className="mb-1.5 flex gap-1" aria-hidden="true">{Array.from({ length: total }).map((_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i < remaining ? 'bg-verdigris' : 'bg-border'}`} />)}</div>
           <p className="text-xs text-muted-foreground">Issued {fmtDate(createdAt)}. {remaining <= 3 && remaining > 0 ? 'Running low; consider a new set.' : remaining === 0 ? 'All used. Generate a new set.' : ''}</p>
         </div>
       )}
-      {armed && total > 0 && <p className="rounded border border-ochre/30 bg-ochre/10 px-3 py-2 text-xs">Generating a new set immediately invalidates all {remaining} unused codes from the current set.</p>}
+      {armed && total > 0 && <p id="codes-replace-warning" role="alert" className="rounded border border-ochre/30 bg-ochre/10 px-3 py-2 text-xs">Generating a new set immediately invalidates all {remaining} unused codes from the current set.</p>}
       <InlineError error={m.error} />
       <div className="flex gap-2">
-        <Button variant={armed || total === 0 ? 'default' : 'outline'} disabled={m.isPending} data-testid="button-regenerate-codes"
-          onClick={() => { if (total > 0 && !armed) { setArmed(true); return; } m.mutate({ data: { idempotencyKey: idem.key } }, { onSuccess: (r) => { idem.rotate(); setArmed(false); setCodes(r.codes); void invalidate(); } }); }}>
+        <Button ref={buttonRef} variant={armed || total === 0 ? 'default' : 'outline'} disabled={m.isPending} data-testid="button-regenerate-codes"
+          aria-describedby={armed && total > 0 ? 'codes-replace-warning' : undefined}
+          onClick={() => { if (total > 0 && !armed) { refocus.current = 'cancel'; setArmed(true); return; } m.mutate({ data: { idempotencyKey: idem.key } }, { onSuccess: (r) => { idem.rotate(); setArmed(false); setCodes(r.codes); void invalidate(); } }); }}>
           {m.isPending ? 'Generating' : total === 0 ? 'Generate 10 codes' : armed ? 'Yes, replace my codes' : 'Generate a new set'}
         </Button>
-        {armed && <Button variant="ghost" onClick={() => setArmed(false)}>Cancel</Button>}
+        {armed && <Button ref={cancelRef} variant="ghost" onClick={() => { refocus.current = 'button'; setArmed(false); }} data-testid="button-cancel-regenerate">Cancel</Button>}
       </div>
     </div>
   );

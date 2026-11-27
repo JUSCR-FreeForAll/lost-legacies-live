@@ -1,2 +1,3 @@
 - [Fortress gate evidence](fortress-evidence.md) — rerun suite and commit evidence with backend changes; never weaken key validation.
 - [Fortress pool discipline](fortress-pool.md) — never hold two pool connections in one request; it deadlocks under concurrency.
+- [Fortress dev browser testing](fortress-dev-testing.md) — one throwaway KEK per test run; rotating it pins a mismatched trust key and pauses writes.
