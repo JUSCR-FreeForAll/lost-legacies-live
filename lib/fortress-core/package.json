@@ -1,0 +1,22 @@
+{
+  "name": "@workspace/fortress-core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-independent Phoenix Fortress core: canonical JSON, hash chain, signatures, envelope encryption, checkpoints, .pfr packages, adapters.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli/verify": "./src/cli/verify.ts"
+  },
+  "scripts": {
+    "build:verifier": "node ./build-verifier.mjs"
+  },
+  "dependencies": {
+    "jsonld": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/jsonld": "^1.5.15",
+    "@types/node": "catalog:",
+    "esbuild": "0.28.2"
+  }
+}

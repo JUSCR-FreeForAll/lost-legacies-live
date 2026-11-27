@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Phoenix Fortress"
+description = "An authenticated, tenant-isolated application-data backup vault with verifiable audit history, safe staged recovery, diagnostics, and a versioned REST API."
+version = "1.0.0"
+id = "artifacts/phoenix-fortress"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18886
+
+[services.development]
+run = "pnpm --filter @workspace/phoenix-fortress run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/phoenix-fortress", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/phoenix-fortress/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18886"
+BASE_PATH = "/"

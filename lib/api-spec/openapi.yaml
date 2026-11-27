@@ -1,0 +1,1568 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 2.0.0
+  description: >-
+    Phoenix Fortress protection and recovery service. All /v1 operations except probes,
+    the guide, and bearer-credential endpoints require a Clerk session. Writes carry a
+    required idempotencyKey in the JSON body. Integration instructions: GET /api/v1/guide.
+servers:
+  - url: /api
+security:
+  - session: []
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      security: []
+      responses:
+        "200":
+          description: Liveness only. The process is running; dependencies are not checked.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthStatus' }
+  /readyz:
+    get:
+      operationId: readiness
+      security: []
+      responses:
+        "200":
+          description: Ready to accept writes.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Readiness' }
+        "503":
+          description: NOT_READY or RECOVERY_REQUIRED. Body lists the failing checks.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Readiness' }
+  /v1/guide:
+    get:
+      operationId: getGuide
+      security: []
+      responses:
+        "200":
+          description: Integration and operations guide (markdown).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Guide' }
+  /v1/me:
+    get:
+      operationId: getIdentity
+      responses:
+        "200":
+          description: Identity, tenant membership and protection state.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Identity' }
+  /v1/overview:
+    get:
+      operationId: getOverview
+      responses:
+        "200":
+          description: Tenant inventory. Not an integrity attestation; use verify.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Overview' }
+  /v1/datasets:
+    get:
+      operationId: listDatasets
+      responses:
+        "200":
+          description: Registered datasets
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Dataset' } }
+    post:
+      operationId: registerDataset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DatasetInput' }
+      responses:
+        "200":
+          description: Registered or idempotent replay
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dataset' }
+  /v1/datasets/{id}/policy:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    patch:
+      operationId: updatePolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PolicyInput' }
+      responses:
+        "200":
+          description: Admin updated policy; existing backup expiry is unchanged.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dataset' }
+  /v1/backups:
+    get:
+      operationId: listBackups
+      responses:
+        "200":
+          description: Backup manifests without payload
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Backup' } }
+    post:
+      operationId: createBackup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BackupInput' }
+      responses:
+        "200":
+          description: Atomic encrypted backup, ledger block and outbox row
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Backup' }
+  /v1/verify:
+    post:
+      operationId: verifyVault
+      responses:
+        "200":
+          description: Full chain, checkpoints, and every retained ciphertext verified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Verification' }
+  /v1/restores/plan:
+    post:
+      operationId: planRestore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RestorePlanInput' }
+      responses:
+        "200":
+          description: Verified dry-run plan
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RestorePlan' }
+  /v1/restores/confirm:
+    post:
+      operationId: confirmRestore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RestoreConfirmInput' }
+      responses:
+        "200":
+          description: Restored into a separate encrypted staging record
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Stage' }
+  /v1/stages:
+    get:
+      operationId: listStages
+      responses:
+        "200":
+          description: Staged recoveries
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Stage' } }
+  /v1/stages/{id}/data:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      operationId: getStageData
+      responses:
+        "200":
+          description: Decrypted staged data (audited)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StageData' }
+  /v1/stages/{id}/rollback:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: rollbackStage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Staging payload discarded; audit record retained
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Stage' }
+  /v1/retention:
+    post:
+      operationId: applyRetention
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Expired payloads purged
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RetentionResult' }
+  /v1/events:
+    get:
+      operationId: listEvents
+      responses:
+        "200":
+          description: Most recent 500 ledger blocks, newest first
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/LedgerBlock' } }
+  /v1/recovery/status:
+    get:
+      operationId: getRecoveryStatus
+      responses:
+        "200":
+          description: Recovery key, codes and contact-policy status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecoveryStatus' }
+  /v1/recovery/setup:
+    post:
+      operationId: setupRecoveryKey
+      responses:
+        "200":
+          description: New recovery key, displayed once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecoveryKeyIssued' }
+  /v1/recovery/confirm:
+    post:
+      operationId: confirmRecoveryKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecoveryKeyConfirmInput' }
+      responses:
+        "200":
+          description: Recovery key activated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecoveryKeyActive' }
+  /v1/recovery/rotate:
+    post:
+      operationId: rotateRecoveryKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RotateRecoveryKeyInput' }
+      responses:
+        "200":
+          description: Replacement recovery key, displayed once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecoveryKeyIssued' }
+  /v1/recovery/rotate/confirm:
+    post:
+      operationId: confirmRecoveryRotation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecoveryKeyConfirmInput' }
+      responses:
+        "200":
+          description: Rotation committed; data keys rewrapped
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecoveryKeyActive' }
+  /v1/recovery/codes:
+    post:
+      operationId: regenerateRecoveryCodes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: New offline recovery codes, displayed once. Older codes stop working.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecoveryCodesIssued' }
+  /v1/recovery/emergency:
+    post:
+      operationId: emergencyRecover
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmergencyInput' }
+      responses:
+        "200":
+          description: Code consumed; sessions and credentials revoked; replacement key pending confirmation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmergencyResult' }
+  /v1/recovery/package:
+    get:
+      operationId: downloadRecoveryPackage
+      responses:
+        "200":
+          description: Signed .pfr recovery package (POSIX tar)
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+  /v1/recovery/contacts:
+    get:
+      operationId: listContacts
+      responses:
+        "200":
+          description: Recovery contacts
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Contact' } }
+    post:
+      operationId: addContact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContactInput' }
+      responses:
+        "200":
+          description: Contact added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contact' }
+  /v1/recovery/contacts/{id}/remove:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: removeContact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Contact removed silently (the contact is not notified)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contact' }
+  /v1/recovery/policy:
+    put:
+      operationId: updateRecoveryPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecoveryPolicyInput' }
+      responses:
+        "200":
+          description: Policy updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecoveryPolicy' }
+  /v1/recovery/ceremonies:
+    get:
+      operationId: listCeremonies
+      responses:
+        "200":
+          description: Contact-assisted recovery ceremonies
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Ceremony' } }
+    post:
+      operationId: startCeremony
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Ceremony started; contacts asked in-app
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ceremony' }
+  /v1/recovery/ceremonies/{id}/cancel:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: cancelCeremony
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ceremony' }
+  /v1/recovery/ceremonies/{id}/complete:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: completeCeremony
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Quorum and delay satisfied; single-use recovery executed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmergencyResult' }
+  /v1/helper/requests:
+    get:
+      operationId: listHelperRequests
+      responses:
+        "200":
+          description: Pending ceremonies where the caller is an active recovery contact
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/HelperRequest' } }
+  /v1/helper/requests/{id}/approve:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: approveHelperRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Approval recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HelperRequest' }
+  /v1/security/sessions/revoke:
+    post:
+      operationId: revokeSessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Other sessions revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionRevocation' }
+  /v1/consents:
+    get:
+      operationId: listConsents
+      responses:
+        "200":
+          description: Consent registry
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Consent' } }
+  /v1/consents/{purpose}:
+    parameters:
+      - { name: purpose, in: path, required: true, schema: { $ref: '#/components/schemas/ConsentPurpose' } }
+    put:
+      operationId: setConsent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConsentInput' }
+      responses:
+        "200":
+          description: Consent recorded in the ledger
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Consent' }
+  /v1/evidence:
+    get:
+      operationId: listEvidence
+      responses:
+        "200":
+          description: Evidence manifests (no content)
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Evidence' } }
+    post:
+      operationId: storeEvidence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EvidenceInput' }
+      responses:
+        "200":
+          description: Encrypted evidence stored (requires evidence_storage consent)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Evidence' }
+  /v1/evidence/{id}/data:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      operationId: getEvidenceData
+      responses:
+        "200":
+          description: Decrypted evidence (audited)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EvidenceData' }
+  /v1/evidence/{id}/delete:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: deleteEvidence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Ciphertext destroyed; manifest and ledger entry remain
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Evidence' }
+  /v1/notifications:
+    get:
+      operationId: listNotifications
+      responses:
+        "200":
+          description: In-app notifications for the caller, rendered in the tenant locale
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Notification' } }
+  /v1/notifications/read:
+    post:
+      operationId: markNotificationsRead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: All marked read
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CountResult' }
+  /v1/safety:
+    put:
+      operationId: updateSafety
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SafetyInput' }
+      responses:
+        "200":
+          description: Safe Recovery mode, locale and notification policy updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Safety' }
+  /v1/credentials:
+    get:
+      operationId: listCredentials
+      responses:
+        "200":
+          description: Credential metadata (never secrets)
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Credential' } }
+    post:
+      operationId: issueCredential
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CredentialInput' }
+      responses:
+        "200":
+          description: Credential secret displayed once; replay of the same key returns metadata only
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CredentialIssued' }
+  /v1/credentials/{id}/revoke:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: revokeCredential
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Credential' }
+  /v1/credentials/revoke-all:
+    post:
+      operationId: revokeAllCredentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Every active credential revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CountResult' }
+  /v1/members:
+    get:
+      operationId: listMembers
+      responses:
+        "200":
+          description: Tenant members
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Member' } }
+    post:
+      operationId: setMember
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MemberInput' }
+      responses:
+        "200":
+          description: Membership changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+  /v1/integrity:
+    get:
+      operationId: getIntegrity
+      responses:
+        "200":
+          description: Open and resolved integrity conditions for this tenant and installation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrityState' }
+  /v1/integrity/resolve:
+    post:
+      operationId: resolveIntegrity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Re-verification passed; open conditions resolved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrityState' }
+  /v1/resilience/checkpoints:
+    get:
+      operationId: listCheckpoints
+      responses:
+        "200":
+          description: Local and imported checkpoints with witness signatures
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Checkpoint' } }
+    post:
+      operationId: createCheckpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Signed checkpoint at the current tip
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Checkpoint' }
+  /v1/resilience/signers:
+    get:
+      operationId: listSigners
+      responses:
+        "200":
+          description: Trusted peer, witness and Seamcraft sender keys
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SignerList' }
+    post:
+      operationId: addSigner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SignerInput' }
+      responses:
+        "200":
+          description: Trusted key registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Signer' }
+  /v1/resilience/signers/{id}/revoke:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: revokeSigner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Revoked (tombstoned; never re-trusted by merge)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Signer' }
+  /v1/resilience/witnesses:
+    post:
+      operationId: submitWitness
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WitnessInput' }
+      responses:
+        "200":
+          description: Countersignature verified and stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Checkpoint' }
+  /v1/resilience/countersign:
+    post:
+      operationId: countersignCheckpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CountersignInput' }
+      responses:
+        "200":
+          description: This installation's witness signature over a trusted peer checkpoint
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WitnessSignature' }
+  /v1/resilience/import:
+    post:
+      operationId: importCheckpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ImportCheckpointInput' }
+      responses:
+        "200":
+          description: Imported checkpoint consistent with the local chain
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportResult' }
+  /v1/resilience/revocations:
+    get:
+      operationId: getRevocations
+      responses:
+        "200":
+          description: Revocation-wins replicated state (tombstones only)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RevocationState' }
+  /v1/resilience/revocations/merge:
+    post:
+      operationId: mergeRevocations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MergeRevocationsInput' }
+      responses:
+        "200":
+          description: Tombstones merged and applied locally
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MergeResult' }
+  /v1/interop/records:
+    get:
+      operationId: listInteropRecords
+      responses:
+        "200":
+          description: Accepted adapter records
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/InteropRecord' } }
+  /v1/interop/jsonld:
+    post:
+      operationId: importJsonLd
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/JsonLdInput' }
+      responses:
+        "200":
+          description: RDFC-1.0 canonicalized and committed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InteropRecord' }
+  /v1/interop/seamcraft:
+    post:
+      operationId: importSeamcraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SeamcraftInput' }
+      responses:
+        "200":
+          description: Signed envelope accepted once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InteropRecord' }
+  /v1/anchors:
+    get:
+      operationId: listAnchors
+      responses:
+        "200":
+          description: External-proof commitments
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnchorList' }
+    post:
+      operationId: prepareAnchor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperationInput' }
+      responses:
+        "200":
+          description: Commitment prepared from the latest checkpoint (requires external_anchor consent)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Anchor' }
+  /v1/anchors/{id}/record:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: recordAnchor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AnchorRecordInput' }
+      responses:
+        "200":
+          description: Operator-reported transaction signature stored as unverified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Anchor' }
+  /v1/diagnostics:
+    get:
+      operationId: getDiagnostics
+      responses:
+        "200":
+          description: Real gate status from live checks and evidence files
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Diagnostics' }
+  /v1/exports:
+    post:
+      operationId: createEncryptedExport
+      security: [{ apiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExportInput' }
+      responses:
+        "200":
+          description: Ciphertext and wrapped data key only (one-time export credential)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EncryptedExport' }
+  /v1/ingest/backups:
+    post:
+      operationId: ingestBackup
+      security: [{ apiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IngestInput' }
+      responses:
+        "200":
+          description: Write-only ingest (JUSCR and other systems) into the credential's dataset
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IngestResult' }
+components:
+  securitySchemes:
+    session: { type: apiKey, in: cookie, name: __session }
+    apiKey: { type: http, scheme: bearer, description: "pf_ opaque credential. Bound to tenant, dataset, kind and expiry." }
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: string } }
+  schemas:
+    ApiFailure:
+      type: object
+      required: [error, code, requestId]
+      properties:
+        error: { type: string }
+        code: { type: string }
+        requestId: { type: string }
+    IdempotencyKey: { type: string, minLength: 8, maxLength: 100 }
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string }
+    ReadinessCheck:
+      type: object
+      required: [name, ok, detail]
+      properties:
+        name: { type: string }
+        ok: { type: boolean }
+        detail: { type: string }
+    Readiness:
+      type: object
+      required: [status, checks, conditions]
+      properties:
+        status: { type: string, enum: [ready, NOT_READY, RECOVERY_REQUIRED] }
+        checks: { type: array, items: { $ref: '#/components/schemas/ReadinessCheck' } }
+        conditions: { type: array, items: { type: string } }
+    Guide:
+      type: object
+      required: [markdown]
+      properties:
+        markdown: { type: string }
+    OperationInput:
+      type: object
+      required: [idempotencyKey]
+      properties:
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    CountResult:
+      type: object
+      required: [count]
+      properties:
+        count: { type: integer }
+    Identity:
+      type: object
+      required: [userId, tenantId, role, tenants, safeMode, locale, notificationMode, recoveryRequired]
+      properties:
+        userId: { type: string }
+        tenantId: { type: string }
+        role: { type: string, enum: [admin, operator] }
+        tenants: { type: array, items: { type: string } }
+        safeMode: { type: boolean }
+        locale: { type: string, enum: [en, es] }
+        notificationMode: { type: string, enum: [in_app, suppressed] }
+        recoveryRequired: { type: boolean }
+    Overview:
+      type: object
+      required: [datasets, backups, retainedBytes, stagedRecoveries, overdueDatasets, ledgerHeight, lastBackupAt, unreadNotifications, openConditions]
+      properties:
+        datasets: { type: integer }
+        backups: { type: integer }
+        retainedBytes: { type: integer }
+        stagedRecoveries: { type: integer }
+        overdueDatasets: { type: integer }
+        ledgerHeight: { type: integer }
+        lastBackupAt: { type: [string, 'null'] }
+        unreadNotifications: { type: integer }
+        openConditions: { type: integer }
+    DatasetInput:
+      type: object
+      required: [name, source, ownershipConfirmed, retentionDays, intervalMinutes, idempotencyKey]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+        source: { type: string, minLength: 1, maxLength: 120, description: Logical user-owned source identifier, never a URL to fetch. }
+        ownershipConfirmed: { type: boolean }
+        retentionDays: { type: integer, minimum: 1, maximum: 365 }
+        intervalMinutes: { type: integer, enum: [0, 60, 360, 1440, 10080] }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    PolicyInput:
+      type: object
+      required: [retentionDays, intervalMinutes, idempotencyKey]
+      properties:
+        retentionDays: { type: integer, minimum: 1, maximum: 365 }
+        intervalMinutes: { type: integer, enum: [0, 60, 360, 1440, 10080] }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    Dataset:
+      type: object
+      required: [id, name, source, retentionDays, intervalMinutes, createdAt, version, nextDueAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        source: { type: string }
+        retentionDays: { type: integer }
+        intervalMinutes: { type: integer }
+        createdAt: { type: string }
+        version: { type: integer }
+        nextDueAt: { type: [string, 'null'] }
+    BackupInput:
+      type: object
+      required: [datasetId, data, idempotencyKey]
+      properties:
+        datasetId: { type: string }
+        data: { description: Any JSON value, canonical size at most 256 KiB. }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    Backup:
+      type: object
+      required: [id, datasetId, datasetName, version, manifestVersion, checksum, bytes, createdAt, expiresAt, status, source]
+      properties:
+        id: { type: string }
+        datasetId: { type: string }
+        datasetName: { type: string }
+        version: { type: integer }
+        manifestVersion: { type: integer }
+        checksum: { type: string }
+        bytes: { type: integer }
+        createdAt: { type: string }
+        expiresAt: { type: string }
+        status: { type: string, enum: [retained, expired, purged] }
+        source: { type: string, enum: [session, ingest] }
+    Verification:
+      type: object
+      required: [valid, ledgerHeight, tipHash, backupsChecked, stagesChecked, evidenceChecked, checkpointsChecked, verifiedAt]
+      properties:
+        valid: { type: boolean }
+        ledgerHeight: { type: integer }
+        tipHash: { type: string }
+        backupsChecked: { type: integer }
+        stagesChecked: { type: integer }
+        evidenceChecked: { type: integer }
+        checkpointsChecked: { type: integer }
+        verifiedAt: { type: string }
+    RestorePlanInput:
+      type: object
+      required: [backupId, target, idempotencyKey]
+      properties:
+        backupId: { type: string }
+        target: { type: string, minLength: 1, maxLength: 80, pattern: '^[A-Za-z0-9 _.-]+$' }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    RestorePlan:
+      type: object
+      required: [id, backupId, target, checksum, bytes, expiresAt, confirmation, dryRun]
+      properties:
+        id: { type: string }
+        backupId: { type: string }
+        target: { type: string }
+        checksum: { type: string }
+        bytes: { type: integer }
+        expiresAt: { type: string }
+        confirmation: { type: string }
+        dryRun: { type: boolean }
+    RestoreConfirmInput:
+      type: object
+      required: [planId, confirmation, idempotencyKey]
+      properties:
+        planId: { type: string }
+        confirmation: { type: string, maxLength: 200 }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    Stage:
+      type: object
+      required: [id, backupId, target, checksum, createdAt, status]
+      properties:
+        id: { type: string }
+        backupId: { type: string }
+        target: { type: string }
+        checksum: { type: string }
+        createdAt: { type: string }
+        status: { type: string, enum: [staged, rolled_back] }
+    StageData:
+      type: object
+      required: [stageId, checksum, data]
+      properties:
+        stageId: { type: string }
+        checksum: { type: string }
+        data: {}
+    RetentionResult:
+      type: object
+      required: [purged]
+      properties:
+        purged: { type: integer }
+    LedgerBlock:
+      type: object
+      required: [v, idx, eventId, occurredAt, eventType, actorId, objectRef, prevHash, hash, meta]
+      properties:
+        v: { type: integer }
+        idx: { type: integer }
+        eventId: { type: string }
+        occurredAt: { type: string }
+        eventType: { type: string }
+        actorId: { type: string }
+        objectRef: { type: string }
+        prevHash: { type: string }
+        hash: { type: string }
+        meta: { type: object, additionalProperties: true }
+    RecoveryPolicy:
+      type: object
+      required: [threshold, delayHours, activeContacts]
+      properties:
+        threshold: { type: integer }
+        delayHours: { type: integer }
+        activeContacts: { type: integer }
+    RecoveryStatus:
+      type: object
+      required: [status, fingerprint, pendingMode, pendingExpiresAt, codesRemaining, codesTotal, codesCreatedAt, policy]
+      properties:
+        status: { type: string, enum: [unconfigured, pending, active] }
+        fingerprint: { type: [string, 'null'] }
+        pendingMode: { type: [string, 'null'], enum: [setup, rotation, null] }
+        pendingExpiresAt: { type: [string, 'null'] }
+        codesRemaining: { type: integer }
+        codesTotal: { type: integer }
+        codesCreatedAt: { type: [string, 'null'] }
+        policy: { $ref: '#/components/schemas/RecoveryPolicy' }
+    RecoveryKeyIssued:
+      type: object
+      required: [status, recoveryKey, fingerprint, expiresAt]
+      properties:
+        status: { type: string, enum: [pending_setup, pending_rotation] }
+        recoveryKey: { type: string, description: Shown once. Never stored in plaintext. }
+        fingerprint: { type: string }
+        expiresAt: { type: string }
+    RecoveryKeyConfirmInput:
+      type: object
+      required: [recoveryKey, idempotencyKey]
+      properties:
+        recoveryKey: { type: string, minLength: 40, maxLength: 60 }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    RotateRecoveryKeyInput:
+      type: object
+      required: [currentRecoveryKey, idempotencyKey]
+      properties:
+        currentRecoveryKey: { type: string, minLength: 40, maxLength: 60 }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    RecoveryKeyActive:
+      type: object
+      required: [status, fingerprint]
+      properties:
+        status: { type: string, enum: [active] }
+        fingerprint: { type: string }
+    RecoveryCodesIssued:
+      type: object
+      required: [codes, batchId, createdAt]
+      properties:
+        codes: { type: array, items: { type: string } }
+        batchId: { type: string }
+        createdAt: { type: string }
+    EmergencyInput:
+      type: object
+      required: [recoveryCode, idempotencyKey]
+      properties:
+        recoveryCode: { type: string, minLength: 16, maxLength: 40 }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    EmergencyResult:
+      type: object
+      required: [method, sessionsRevoked, credentialsRevoked, recoveryKey, fingerprint, expiresAt, newCodes]
+      properties:
+        method: { type: string, enum: [recovery_code, contact_ceremony] }
+        sessionsRevoked: { type: boolean }
+        credentialsRevoked: { type: integer }
+        recoveryKey: { type: [string, 'null'], description: Replacement recovery key shown once (null if no key was active). Confirm with rotate/confirm. }
+        fingerprint: { type: [string, 'null'] }
+        expiresAt: { type: [string, 'null'] }
+        newCodes: { type: array, items: { type: string } }
+        providerSessionsRevoked: { type: integer, description: Sign-in provider sessions confirmed ended in this call. }
+        providerRevocationPending: { type: boolean, description: True when the provider did not confirm every revocation; the local block still applies and a retry is scheduled. }
+    Contact:
+      type: object
+      required: [id, label, contactUserId, status, createdAt]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        contactUserId: { type: string }
+        status: { type: string, enum: [active, removed] }
+        createdAt: { type: string }
+    ContactInput:
+      type: object
+      required: [label, contactUserId, idempotencyKey]
+      properties:
+        label: { type: string, minLength: 1, maxLength: 60 }
+        contactUserId: { type: string, minLength: 3, maxLength: 120 }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    RecoveryPolicyInput:
+      type: object
+      required: [threshold, delayHours, idempotencyKey]
+      properties:
+        threshold: { type: integer, minimum: 1, maximum: 10 }
+        delayHours: { type: integer, minimum: 24, maximum: 720 }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    Ceremony:
+      type: object
+      required: [id, status, threshold, approvals, readyAt, expiresAt, createdAt, completedAt]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [pending, cancelled, completed, expired] }
+        threshold: { type: integer }
+        approvals: { type: integer }
+        readyAt: { type: string }
+        expiresAt: { type: string }
+        createdAt: { type: string }
+        completedAt: { type: [string, 'null'] }
+    HelperRequest:
+      type: object
+      required: [ceremonyId, contactLabel, status, approved, readyAt, expiresAt]
+      properties:
+        ceremonyId: { type: string }
+        contactLabel: { type: string }
+        status: { type: string }
+        approved: { type: boolean }
+        readyAt: { type: string }
+        expiresAt: { type: string }
+    SessionRevocation:
+      type: object
+      required: [revokedAt, providerSessionsRevoked, provider]
+      properties:
+        revokedAt: { type: string }
+        providerSessionsRevoked: { type: integer }
+        provider: { type: string }
+    ConsentPurpose:
+      type: string
+      enum: [evidence_storage, recovery_contacts, witness_sharing, jsonld_import, seamcraft_import, juscr_ingest, external_anchor]
+    Consent:
+      type: object
+      required: [purpose, state, version, updatedAt, description]
+      properties:
+        purpose: { $ref: '#/components/schemas/ConsentPurpose' }
+        state: { type: string, enum: [granted, withdrawn, never_asked] }
+        version: { type: integer }
+        updatedAt: { type: [string, 'null'] }
+        description: { type: string }
+    ConsentInput:
+      type: object
+      required: [state, idempotencyKey]
+      properties:
+        state: { type: string, enum: [granted, withdrawn] }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    EvidenceInput:
+      type: object
+      required: [label, content, idempotencyKey]
+      properties:
+        label: { type: string, minLength: 1, maxLength: 80 }
+        content: { type: string, minLength: 1, maxLength: 100000 }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    Evidence:
+      type: object
+      required: [id, label, checksum, bytes, status, createdAt]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        checksum: { type: string }
+        bytes: { type: integer }
+        status: { type: string, enum: [retained, deleted] }
+        createdAt: { type: string }
+    EvidenceData:
+      type: object
+      required: [id, checksum, content]
+      properties:
+        id: { type: string }
+        checksum: { type: string }
+        content: { type: string }
+    Notification:
+      type: object
+      required: [id, messageId, text, severity, createdAt, read]
+      properties:
+        id: { type: string }
+        messageId: { type: string }
+        text: { type: string }
+        severity: { type: string }
+        createdAt: { type: string }
+        read: { type: boolean }
+    SafetyInput:
+      type: object
+      required: [safeMode, locale, notificationMode, idempotencyKey]
+      properties:
+        safeMode: { type: boolean }
+        locale: { type: string, enum: [en, es] }
+        notificationMode: { type: string, enum: [in_app, suppressed] }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    Safety:
+      type: object
+      required: [safeMode, locale, notificationMode]
+      properties:
+        safeMode: { type: boolean }
+        locale: { type: string, enum: [en, es] }
+        notificationMode: { type: string, enum: [in_app, suppressed] }
+    CredentialInput:
+      type: object
+      required: [name, datasetId, kind, expiresInMinutes, idempotencyKey]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        datasetId: { type: string }
+        kind: { type: string, enum: [export, ingest] }
+        expiresInMinutes: { type: integer, minimum: 1, maximum: 129600, description: "export: at most 15; ingest: at most 129600 (90 days)" }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    Credential:
+      type: object
+      required: [id, name, datasetId, kind, prefix, expiresAt, revoked, usedAt, useCount]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        datasetId: { type: string }
+        kind: { type: string, enum: [export, ingest] }
+        prefix: { type: string }
+        expiresAt: { type: string }
+        revoked: { type: boolean }
+        usedAt: { type: [string, 'null'] }
+        useCount: { type: integer }
+    CredentialIssued:
+      type: object
+      required: [credential, token]
+      properties:
+        credential: { $ref: '#/components/schemas/Credential' }
+        token: { type: [string, 'null'], description: Shown once. Null on idempotent replay. }
+    Member:
+      type: object
+      required: [userId, role]
+      properties:
+        userId: { type: string }
+        role: { type: string, enum: [admin, operator, removed] }
+    MemberInput:
+      type: object
+      required: [userId, role, idempotencyKey]
+      properties:
+        userId: { type: string, minLength: 3, maxLength: 120 }
+        role: { type: string, enum: [operator, removed] }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    IntegrityCondition:
+      type: object
+      required: [id, scope, code, detail, detectedAt, resolvedAt]
+      properties:
+        id: { type: string }
+        scope: { type: string, enum: [tenant, installation] }
+        code: { type: string }
+        detail: { type: object, additionalProperties: true }
+        detectedAt: { type: string }
+        resolvedAt: { type: [string, 'null'] }
+    IntegrityState:
+      type: object
+      required: [recoveryRequired, conditions]
+      properties:
+        recoveryRequired: { type: boolean }
+        conditions: { type: array, items: { $ref: '#/components/schemas/IntegrityCondition' } }
+    WitnessSignature:
+      type: object
+      required: [witness, checkpoint_hash, signature]
+      properties:
+        witness: { type: string }
+        checkpoint_hash: { type: string }
+        signature: { type: string }
+    SignedCheckpoint:
+      type: object
+      required: [checkpoint, checkpoint_hash, signature]
+      properties:
+        checkpoint: { type: object, additionalProperties: true }
+        checkpoint_hash: { type: string }
+        signature: { type: string }
+    Checkpoint:
+      type: object
+      required: [id, height, tipHash, checkpointHash, signer, source, origin, createdAt, signed, witnesses]
+      properties:
+        id: { type: string }
+        height: { type: integer }
+        tipHash: { type: string }
+        checkpointHash: { type: string }
+        signer: { type: string }
+        source: { type: string, enum: [local, imported] }
+        origin: { type: string }
+        createdAt: { type: string }
+        signed: { $ref: '#/components/schemas/SignedCheckpoint' }
+        witnesses: { type: array, items: { $ref: '#/components/schemas/WitnessSignature' } }
+    Signer:
+      type: object
+      required: [id, keyId, kind, label, createdAt, revokedAt]
+      properties:
+        id: { type: string }
+        keyId: { type: string }
+        kind: { type: string, enum: [peer, witness, seamcraft_sender] }
+        label: { type: string }
+        createdAt: { type: string }
+        revokedAt: { type: [string, 'null'] }
+    SignerList:
+      type: object
+      required: [installationKey, signers]
+      properties:
+        installationKey: { type: string }
+        signers: { type: array, items: { $ref: '#/components/schemas/Signer' } }
+    SignerInput:
+      type: object
+      required: [keyId, kind, label, idempotencyKey]
+      properties:
+        keyId: { type: string, pattern: '^ed25519:[A-Za-z0-9_-]{43}$' }
+        kind: { type: string, enum: [peer, witness, seamcraft_sender] }
+        label: { type: string, minLength: 1, maxLength: 60 }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    WitnessInput:
+      type: object
+      required: [witness, idempotencyKey]
+      properties:
+        witness: { $ref: '#/components/schemas/WitnessSignature' }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    CountersignInput:
+      type: object
+      required: [signed]
+      properties:
+        signed: { $ref: '#/components/schemas/SignedCheckpoint' }
+    ImportCheckpointInput:
+      type: object
+      required: [signed, origin, idempotencyKey]
+      properties:
+        signed: { $ref: '#/components/schemas/SignedCheckpoint' }
+        origin: { type: string, minLength: 1, maxLength: 80 }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    ImportResult:
+      type: object
+      required: [status, height, localHeight, checkpointHash]
+      properties:
+        status: { type: string, enum: [consistent] }
+        height: { type: integer }
+        localHeight: { type: integer }
+        checkpointHash: { type: string }
+    Tombstone:
+      type: object
+      required: [kind, id, revoked_at_us, origin]
+      properties:
+        kind: { type: string, enum: [credential, recovery_contact, consent, trusted_signer] }
+        id: { type: string }
+        revoked_at_us: { type: integer }
+        origin: { type: string }
+    RevocationState:
+      type: object
+      required: [origin, state]
+      properties:
+        origin: { type: string }
+        state: { type: object, additionalProperties: { $ref: '#/components/schemas/Tombstone' } }
+    MergeRevocationsInput:
+      type: object
+      required: [state, idempotencyKey]
+      properties:
+        state: { type: object, additionalProperties: true }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    MergeResult:
+      type: object
+      required: [added, applied, total]
+      properties:
+        added: { type: integer }
+        applied: { type: integer }
+        total: { type: integer }
+    InteropRecord:
+      type: object
+      required: [id, adapter, objectRef, meta, eventIdx, createdAt, replay]
+      properties:
+        id: { type: string }
+        adapter: { type: string, enum: [jsonld, seamcraft] }
+        objectRef: { type: string }
+        meta: { type: object, additionalProperties: true }
+        eventIdx: { type: integer }
+        createdAt: { type: string }
+        replay: { type: boolean }
+    JsonLdInput:
+      type: object
+      required: [document, idempotencyKey]
+      properties:
+        document: { type: object, additionalProperties: true }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    SeamcraftInput:
+      type: object
+      required: [envelope, idempotencyKey]
+      properties:
+        envelope: { type: object, additionalProperties: true }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    Anchor:
+      type: object
+      required: [id, checkpointHash, commitment, memo, status, network, txSignature, createdAt, recordedAt]
+      properties:
+        id: { type: string }
+        checkpointHash: { type: string }
+        commitment: { type: object, additionalProperties: true }
+        memo: { type: string }
+        status: { type: string, enum: [prepared, recorded_unverified] }
+        network: { type: [string, 'null'] }
+        txSignature: { type: [string, 'null'] }
+        createdAt: { type: string }
+        recordedAt: { type: [string, 'null'] }
+    AnchorList:
+      type: object
+      required: [enabled, consent, anchors]
+      properties:
+        enabled: { type: boolean }
+        consent: { type: string }
+        anchors: { type: array, items: { $ref: '#/components/schemas/Anchor' } }
+    AnchorRecordInput:
+      type: object
+      required: [txSignature, network, idempotencyKey]
+      properties:
+        txSignature: { type: string, minLength: 80, maxLength: 90 }
+        network: { type: string, enum: [mainnet-beta, devnet, testnet] }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    Gate:
+      type: object
+      required: [id, phase, title, status, critical, detail, source]
+      properties:
+        id: { type: string }
+        phase: { type: string }
+        title: { type: string }
+        status: { type: string, enum: [pass, fail, not_run, stale, not_verified] }
+        critical: { type: boolean }
+        detail: { type: string }
+        source: { type: string, enum: [live, evidence, manual] }
+    TestEvidence:
+      type: object
+      required: [ranAt, passed, failed, sourceHash, currentSourceHash, database, runtime, file]
+      properties:
+        ranAt: { type: string }
+        passed: { type: integer }
+        failed: { type: integer }
+        sourceHash: { type: string }
+        currentSourceHash: { type: [string, 'null'] }
+        database: { type: string }
+        runtime: { type: string }
+        file: { type: string }
+    Diagnostics:
+      type: object
+      required: [readiness, encryption, signingKey, sessionRevoker, outbox, gates, latestTests, productionVerified, publishable, limitations]
+      properties:
+        readiness: { $ref: '#/components/schemas/Readiness' }
+        encryption: { type: string, enum: [configured, not_configured, invalid] }
+        signingKey: { type: string }
+        sessionRevoker: { type: string }
+        outbox: { type: object, additionalProperties: true }
+        gates: { type: array, items: { $ref: '#/components/schemas/Gate' } }
+        latestTests: { oneOf: [{ $ref: '#/components/schemas/TestEvidence' }, { type: 'null' }] }
+        productionVerified: { type: boolean }
+        publishable: { type: boolean }
+        limitations: { type: array, items: { type: string } }
+    ExportInput:
+      type: object
+      required: [backupId]
+      properties:
+        backupId: { type: string }
+    EncryptedExport:
+      type: object
+      required: [manifest, ciphertext, nonce, tag, wrappedDataKey, dataKeyNonce, dataKeyTag]
+      properties:
+        manifest: { type: object, additionalProperties: true }
+        ciphertext: { type: string }
+        nonce: { type: string }
+        tag: { type: string }
+        wrappedDataKey: { type: string }
+        dataKeyNonce: { type: string }
+        dataKeyTag: { type: string }
+    IngestInput:
+      type: object
+      required: [data, idempotencyKey]
+      properties:
+        data: { description: Any JSON value, canonical size at most 256 KiB. }
+        idempotencyKey: { $ref: '#/components/schemas/IdempotencyKey' }
+    IngestResult:
+      type: object
+      required: [backupId, version, checksum, bytes, replay]
+      properties:
+        backupId: { type: string }
+        version: { type: integer }
+        checksum: { type: string }
+        bytes: { type: integer }
+        replay: { type: boolean }

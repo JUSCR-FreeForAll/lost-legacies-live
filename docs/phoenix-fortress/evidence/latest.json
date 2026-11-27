@@ -1,0 +1,299 @@
+{
+  "ranAt": "2026-11-27T03:39:09.827Z",
+  "passed": 41,
+  "failed": 0,
+  "sourceHash": "sha256:7e030c9ee129c4c7829af169fbfee8aa2dc856cac75b4a79be86a894d86c5c72",
+  "database": "fortress_test (separate PostgreSQL database, truncated before every test)",
+  "runtime": "node v24.22.3",
+  "tests": [
+    {
+      "name": "[G01] genesis is a pure function of the manifest (same input, same block)",
+      "gates": [
+        "G01"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G01] canonical JSON is order-independent and rejects floats that are not finite",
+      "gates": [
+        "G01"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G03] a modified block breaks chain verification",
+      "gates": [
+        "G03"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G03] index gaps, predecessor mismatches and unsupported canonicalization versions are rejected",
+      "gates": [
+        "G03"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G04] a checkpoint over the original chain rejects a rewritten chain",
+      "gates": [
+        "G04"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P2-4] English and Spanish catalogs have the same IDs and placeholders",
+      "gates": [
+        "P2-4"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P3-3] revocation CRDT merge is commutative, idempotent and never un-revokes",
+      "gates": [
+        "P3-3"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P4-1] JSON-LD is canonicalized with RDFC-1.0 independent of key order",
+      "gates": [
+        "P4-1"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P4-1] remote JSON-LD contexts are never fetched",
+      "gates": [
+        "P4-1"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P5-1] anchor commitments contain only hashes and a height",
+      "gates": [
+        "P5-1"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G12] random 32-byte key material never appears in canonical ledger meta helpers",
+      "gates": [
+        "G12"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G01] a fresh tenant starts with the deterministic expected genesis",
+      "gates": [
+        "G01"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G02][P5-2] boot reaches READY with all network access blocked and no Solana",
+      "gates": [
+        "G02",
+        "P5-2"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G03] a tampered block fails closed: verify rejects, readiness is RECOVERY_REQUIRED, writes pause",
+      "gates": [
+        "G03"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G04] a fully rewritten, self-consistent ledger is caught by the signed checkpoint",
+      "gates": [
+        "G04"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G05] concurrent commits never duplicate or lose a block",
+      "gates": [
+        "G05"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G06] replaying a request with the same idempotency key does not mutate twice",
+      "gates": [
+        "G06"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G07] the JSONL outbox export resumes safely after a crash mid-write and rebuilds a lost archive",
+      "gates": [
+        "G07"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G08] lost device: a saved recovery code restores control and data stays decryptable",
+      "gates": [
+        "G08"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G09] stolen device: other sessions and every API credential are revoked",
+      "gates": [
+        "G09"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G10] ransomware drill: a .pfr package verifies and decrypts offline with only the verifier",
+      "gates": [
+        "G10"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G11] a bad backup is rejected at restore and the source is never overwritten",
+      "gates": [
+        "G11"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G12] secret scan: no recovery key, code, credential, KEK or plaintext is stored or archived",
+      "gates": [
+        "G12"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G14] safe mode: suppressed notices, no notice to removed contacts, no tracking columns",
+      "gates": [
+        "G14"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G09] provider failure is reported, never claimed as success; the local block holds and a retry finishes it",
+      "gates": [
+        "G09"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G06] one-time secrets are never re-issued or replayed for the same idempotency key",
+      "gates": [
+        "G06"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G02][G03] until startup verification succeeds, readiness is NOT_READY and writes are refused",
+      "gates": [
+        "G02",
+        "G03"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G05] verification running alongside concurrent commits never reports false tampering",
+      "gates": [
+        "G05"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[G03] resolve clears a condition only when its own check passes",
+      "gates": [
+        "G03"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P2-1] contact recovery needs the quorum and the waiting period; the owner can cancel",
+      "gates": [
+        "P2-1"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P2-2] every consent-gated action is refused until granted and again after withdrawal",
+      "gates": [
+        "P2-2"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P2-3] evidence is encrypted at rest, readable by the owner, and crypto-shredded on delete",
+      "gates": [
+        "P2-3"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P2-4] notifications store only message IDs and render in English or Spanish",
+      "gates": [
+        "P2-4"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P3-1] witness countersignatures are accepted only from registered witness keys",
+      "gates": [
+        "P3-1"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P3-2] importing an external checkpoint detects contradiction and rollback",
+      "gates": [
+        "P3-2"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P2-2] consent withdrawn mid-flow is rechecked when the action commits",
+      "gates": [
+        "P2-2"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P3-3] merging a peer's revocations revokes locally and can never re-grant",
+      "gates": [
+        "P3-3"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P4-1] JSON-LD import commits the RDFC-1.0 digest and refuses remote contexts",
+      "gates": [
+        "P4-1"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P4-2] Seamcraft envelopes need consent, a registered signed sender, the right recipient and a fresh nonce",
+      "gates": [
+        "P4-2"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P4-3] JUSCR ingest through a write-only credential is idempotent and cannot read",
+      "gates": [
+        "P4-3"
+      ],
+      "ok": true
+    },
+    {
+      "name": "[P5-1] anchors need consent, carry only hashes and record a transaction without network",
+      "gates": [
+        "P5-1"
+      ],
+      "ok": true
+    }
+  ]
+}
