@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Phoenix Fortress</title>
+  <rect width="512" height="512" rx="108" fill="#101c28" />
+  <path d="M256 65 386 146v122c0 87-44 147-130 185-86-38-130-98-130-185V146Z" fill="#172b38" stroke="#d3a35e" stroke-width="16" />
+  <path d="M256 135c-13 52-62 77-58 127 2 33 26 57 58 80 32-23 56-47 58-80 4-50-45-75-58-127Z" fill="#d3a35e" />
+  <path d="M256 190c-5 31-30 46-28 74 2 16 11 29 28 44 17-15 26-28 28-44 2-28-23-43-28-74Z" fill="#172b38" />
+</svg>

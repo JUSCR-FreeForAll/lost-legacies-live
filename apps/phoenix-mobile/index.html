@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#101c28" />
+    <meta name="description" content="Phoenix Fortress mobile interface for consent-based digital protection and recovery." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./icons/fortress.svg" />
+    <link rel="apple-touch-icon" href="./icons/fortress.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Phoenix Fortress · Mobile</title>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="side" aria-label="Primary navigation">
+        <div class="brand"><span class="brandmark" aria-hidden="true">✦</span><span>PHOENIX<br /><strong>FORTRESS</strong></span></div>
+        <nav id="desktop-nav" class="desktop-nav" aria-label="Sections"></nav>
+        <div class="side-foot">RECOVERABILITY, NOT CONTROL<br /><span>Private by default</span></div>
+      </aside>
+      <div class="main">
+        <header class="topbar">
+          <div class="mobile-brand"><span aria-hidden="true">✦</span> PHOENIX FORTRESS</div>
+          <div class="top-right"><span class="connection-dot" id="connection-dot" aria-hidden="true"></span><span id="connection-label">NOT CONNECTED</span></div>
+        </header>
+        <main id="content" tabindex="-1" aria-live="polite"></main>
+        <footer class="footer">Fortress mobile interface · No backup or recovery operation runs without an authorized service.</footer>
+      </div>
+      <nav class="bottom-nav" id="mobile-nav" aria-label="Mobile navigation"></nav>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
