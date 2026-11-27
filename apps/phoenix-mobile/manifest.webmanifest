@@ -1,0 +1,14 @@
+{
+  "name": "Phoenix Fortress Mobile",
+  "short_name": "Fortress",
+  "description": "A consent-first mobile interface for digital backup, integrity checks, and recovery.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101c28",
+  "theme_color": "#101c28",
+  "icons": [
+    { "src": "./icons/fortress.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
